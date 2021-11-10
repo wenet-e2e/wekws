@@ -126,6 +126,7 @@ def speed_perturb(data, speeds=None):
 
         yield sample
 
+
 def compute_mfcc(
     data,
     feature_type='mfcc',
@@ -163,6 +164,7 @@ def compute_mfcc(
             sample_frequency=sample_rate,
         )
         yield dict(key=sample['key'], label=sample['label'], feat=mat)
+
 
 def compute_fbank(data,
                   feature_type='fbank',

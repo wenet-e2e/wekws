@@ -135,7 +135,8 @@ def main():
                                 num_workers=args.num_workers,
                                 prefetch_factor=args.prefetch)
 
-    input_dim = configs['dataset_conf']['feature_extraction_conf']['num_mel_bins']
+    input_dim = configs['dataset_conf']['feature_extraction_conf'][
+        'num_mel_bins']
     output_dim = args.num_keywords
 
     # Write model_dir/config.yaml for inference and export
@@ -161,8 +162,8 @@ def main():
     # Try to export the model by script, if fails, we should refine
     # the code to satisfy the script export requirements
     #if args.rank == 0:
-        #script_model = torch.jit.script(model)
-        #script_model.save(os.path.join(args.model_dir, 'init.zip'))
+    #script_model = torch.jit.script(model)
+    #script_model.save(os.path.join(args.model_dir, 'init.zip'))
     executor = Executor()
     # If specify checkpoint, load some info from checkpoint
     if args.checkpoint is not None:
