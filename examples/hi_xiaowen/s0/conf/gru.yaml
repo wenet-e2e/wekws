@@ -1,0 +1,41 @@
+dataset_conf:
+    filter_conf:
+        max_length: 2048
+        min_length: 0
+    resample_conf:
+        resample_rate: 16000
+    speed_perturb: false
+    fbank_conf:
+        num_mel_bins: 40
+        frame_shift: 10
+        frame_length: 25
+        dither: 0.1
+    spec_aug: false
+    spec_aug_conf:
+        num_t_mask: 2
+        num_f_mask: 2
+        max_t: 50
+        max_f: 30
+    shuffle: true
+    shuffle_conf:
+        shuffle_size: 1500
+    batch_conf:
+        batch_size: 256
+
+model:
+    hidden_dim: 128
+    subsampling:
+        type: linear
+    body:
+        type: gru
+        num_layers: 2
+
+optim: adam
+optim_conf:
+    lr: 0.001
+
+training_config:
+    grad_clip: 5
+    max_epoch: 80
+    log_interval: 10
+
