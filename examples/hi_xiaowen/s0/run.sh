@@ -3,24 +3,24 @@
 
 . ./path.sh
 
-export CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7"
+export CUDA_VISIBLE_DEVICES="0"
 
-stage=0
-stop_stage=4
+stage=2
+stop_stage=2
 num_keywords=2
 
-config=conf/ds_tcn.yaml
-norm_mean=true
-norm_var=true
+config=conf/mdtc.yaml
+norm_mean=false
+norm_var=false
 gpu_id=0
 
 checkpoint=
-dir=exp/ds_tcn
+dir=exp/mdtc
 
-num_average=30
+num_average=10
 score_checkpoint=$dir/avg_${num_average}.pt
 
-download_dir=/export/expts6/binbinzhang/data/
+download_dir=./data/local # your data dir
 
 . tools/parse_options.sh || exit 1;
 
@@ -34,19 +34,16 @@ fi
 
 if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
   echo "Preparing datasets..."
-  mkdir dict
+  mkdir -p dict
   echo "<filler> -1" > dict/words.txt
   echo "Hi_Xiaowen 0" >> dict/words.txt
   echo "Nihao_Wenwen 1" >> dict/words.txt
 
-  for folder in train dev eval; do
+  for folder in train dev test; do
     mkdir -p data/$folder
     for prefix in p n; do
       mkdir -p data/${prefix}_$folder
       json_path=$download_dir/mobvoi_hotword_dataset_resources/${prefix}_$folder.json
-      if [ $folder = "eval" ]; then
-        json_path=$download_dir/mobvoi_hotword_dataset_resources/${prefix}_test.json
-      fi
       local/prepare_data.py $download_dir/mobvoi_hotword_dataset $json_path \
         data/${prefix}_$folder
     done
@@ -63,7 +60,7 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
     --in_scp data/train/wav.scp \
     --out_cmvn data/train/global_cmvn
 
-  for x in train dev eval; do
+  for x in train dev test; do
     tools/wav_to_duration.sh --nj 8 data/$x/wav.scp data/$x/wav.dur
     tools/make_list.py data/$x/wav.scp data/$x/text \
       data/$x/wav.dur data/$x/data.list
@@ -100,27 +97,31 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
   # Compute posterior score
   result_dir=$dir/test_$(basename $score_checkpoint)
   mkdir -p $result_dir
-  python kws/bin/score.py --gpu -1 \
+  python kws/bin/score.py --gpu 1 \
     --config $dir/config.yaml \
-    --test_data data/eval/data.list \
+    --test_data data/test/data.list \
     --batch_size 256 \
     --checkpoint $score_checkpoint \
     --score_file $result_dir/score.txt
+fi
 
+if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then 
   # Compute detection error tradeoff
+  result_dir=$dir/test_$(basename $score_checkpoint)
   for keyword in 0 1; do
     python kws/bin/compute_det.py \
       --keyword $keyword \
-      --test_data data/eval/data.list \
+      --test_data data/test/data.list \
       --score_file $result_dir/score.txt \
       --stats_file $result_dir/stats.${keyword}.txt
   done
 fi
 
 
-if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
+if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
   python kws/bin/export_jit.py --config $dir/config.yaml \
     --checkpoint $score_checkpoint \
     --output_file $dir/final.zip \
     --output_quant_file $dir/final.quant.zip
 fi
+

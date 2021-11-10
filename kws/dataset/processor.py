@@ -126,6 +126,43 @@ def speed_perturb(data, speeds=None):
 
         yield sample
 
+def compute_mfcc(
+    data,
+    feature_type='mfcc',
+    num_ceps=80,
+    num_mel_bins=80,
+    frame_length=25,
+    frame_shift=10,
+    dither=0.0,
+):
+    """Extract mfcc
+
+    Args:
+        data: Iterable[{key, wav, label, sample_rate}]
+
+    Returns:
+        Iterable[{key, feat, label}]
+    """
+    for sample in data:
+        assert 'sample_rate' in sample
+        assert 'wav' in sample
+        assert 'key' in sample
+        assert 'label' in sample
+        sample_rate = sample['sample_rate']
+        waveform = sample['wav']
+        waveform = waveform * (1 << 15)
+        # Only keep key, feat, label
+        mat = kaldi.mfcc(
+            waveform,
+            num_ceps=num_ceps,
+            num_mel_bins=num_mel_bins,
+            frame_length=frame_length,
+            frame_shift=frame_shift,
+            dither=dither,
+            energy_floor=0.0,
+            sample_frequency=sample_rate,
+        )
+        yield dict(key=sample['key'], label=sample['label'], feat=mat)
 
 def compute_fbank(data,
                   num_mel_bins=23,
