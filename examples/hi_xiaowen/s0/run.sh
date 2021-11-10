@@ -5,8 +5,8 @@
 
 export CUDA_VISIBLE_DEVICES="0"
 
-stage=2
-stop_stage=2
+stage=0
+stop_stage=4
 num_keywords=2
 
 config=conf/mdtc.yaml

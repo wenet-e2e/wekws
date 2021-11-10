@@ -135,7 +135,7 @@ def main():
                                 num_workers=args.num_workers,
                                 prefetch_factor=args.prefetch)
 
-    input_dim = configs['input_dim']
+    input_dim = configs['dataset_conf']['feature_extraction_conf']['num_mel_bins']
     output_dim = args.num_keywords
 
     # Write model_dir/config.yaml for inference and export

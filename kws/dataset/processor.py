@@ -165,6 +165,7 @@ def compute_mfcc(
         yield dict(key=sample['key'], label=sample['label'], feat=mat)
 
 def compute_fbank(data,
+                  feature_type='fbank',
                   num_mel_bins=23,
                   frame_length=25,
                   frame_shift=10,
