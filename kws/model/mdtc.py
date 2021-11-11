@@ -167,6 +167,15 @@ class TCNStack(nn.Module):
 
 
 class MDTC(nn.Module):
+    """Multi-scale Depthwise Temporal Convolution (MDTC).
+    In MDTC, stacked depthwise one-dimensional (1-D) convolution with
+    dilated connections is adopted to efficiently model long-range
+    dependency of speech. With a large receptive field while
+    keeping a small number of model parameters, the structure
+    can model temporal context of speech effectively. It aslo 
+    extracts multi-scale features from different hidden layers 
+    of MDTC with different receptive fields.
+    """
     def __init__(
         self,
         stack_num: int,
