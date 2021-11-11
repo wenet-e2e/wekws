@@ -172,8 +172,8 @@ class MDTC(nn.Module):
     dilated connections is adopted to efficiently model long-range
     dependency of speech. With a large receptive field while
     keeping a small number of model parameters, the structure
-    can model temporal context of speech effectively. It aslo 
-    extracts multi-scale features from different hidden layers 
+    can model temporal context of speech effectively. It aslo
+    extracts multi-scale features from different hidden layers
     of MDTC with different receptive fields.
     """
     def __init__(
