@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import torch
-import torch.nn.functional as F
 
 from kws.utils.mask import padding_mask
 
