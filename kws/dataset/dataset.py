@@ -136,10 +136,13 @@ def Dataset(data_list_file, conf, partition=True):
     speed_perturb = conf.get('speed_perturb', False)
     if speed_perturb:
         dataset = Processor(dataset, processor.speed_perturb)
-
-    fbank_conf = conf.get('fbank_conf', {})
-    dataset = Processor(dataset, processor.compute_fbank, **fbank_conf)
-
+    feature_extraction_conf = conf.get('feature_extraction_conf', {})
+    if feature_extraction_conf['feature_type'] == 'mfcc':
+        dataset = Processor(dataset, processor.compute_mfcc,
+                            **feature_extraction_conf)
+    elif feature_extraction_conf['feature_type'] == 'fbank':
+        dataset = Processor(dataset, processor.compute_fbank,
+                            **feature_extraction_conf)
     spec_aug = conf.get('spec_aug', True)
     if spec_aug:
         spec_aug_conf = conf.get('spec_aug_conf', {})

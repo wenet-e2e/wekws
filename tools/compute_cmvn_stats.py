@@ -18,9 +18,10 @@ torchaudio.set_audio_backend("sox_io")
 class CollateFunc(object):
     ''' Collate function for AudioDataset
     '''
-    def __init__(self, feat_dim, resample_rate):
+    def __init__(self, feat_dim, feat_type, resample_rate):
         self.feat_dim = feat_dim
         self.resample_rate = resample_rate
+        self.feat_type = feat_type
         pass
 
     def __call__(self, batch):
@@ -31,7 +32,8 @@ class CollateFunc(object):
             value = item[1].strip().split(",")
             assert len(value) == 3 or len(value) == 1
             wav_path = value[0]
-            sample_rate = torchaudio.backend.sox_io_backend.info(wav_path).sample_rate
+            sample_rate = torchaudio.backend.sox_io_backend.info(
+                wav_path).sample_rate
             resample_rate = sample_rate
             # len(value) == 3 means segmented wav.scp,
             # len(value) == 1 means original wav.scp
@@ -50,12 +52,21 @@ class CollateFunc(object):
                 resample_rate = self.resample_rate
                 waveform = torchaudio.transforms.Resample(
                     orig_freq=sample_rate, new_freq=resample_rate)(waveform)
-
-            mat = kaldi.fbank(waveform,
-                              num_mel_bins=self.feat_dim,
-                              dither=0.0,
-                              energy_floor=0.0,
-                              sample_frequency=resample_rate)
+            if self.feat_type == 'fbank':
+                mat = kaldi.fbank(waveform,
+                                  num_mel_bins=self.feat_dim,
+                                  dither=0.0,
+                                  energy_floor=0.0,
+                                  sample_frequency=resample_rate)
+            elif self.feat_type == 'mfcc':
+                mat = kaldi.mfcc(
+                    waveform,
+                    num_ceps=self.feat_dim,
+                    num_mel_bins=self.feat_dim,
+                    dither=0.0,
+                    energy_floor=0.0,
+                    sample_frequency=resample_rate,
+                )
             mean_stat += torch.sum(mat, axis=0)
             var_stat += torch.sum(torch.square(mat), axis=0)
             number += mat.shape[0]
@@ -95,13 +106,17 @@ if __name__ == '__main__':
 
     with open(args.train_config, 'r') as fin:
         configs = yaml.load(fin, Loader=yaml.FullLoader)
-    feat_dim = configs['dataset_conf']['fbank_conf']['num_mel_bins']
+    feat_dim = configs['dataset_conf']['feature_extraction_conf'][
+        'num_mel_bins']
+    feat_type = configs['dataset_conf']['feature_extraction_conf'][
+        'feature_type']
     resample_rate = 0
     if 'resample_conf' in configs['dataset_conf']:
-        resample_rate = configs['dataset_conf']['resample_conf']['resample_rate']
+        resample_rate = configs['dataset_conf']['resample_conf'][
+            'resample_rate']
         print('using resample and new sample rate is {}'.format(resample_rate))
 
-    collate_func = CollateFunc(feat_dim, resample_rate)
+    collate_func = CollateFunc(feat_dim, feat_type, resample_rate)
     dataset = AudioDataset(args.in_scp)
     batch_size = 20
     data_loader = DataLoader(dataset,

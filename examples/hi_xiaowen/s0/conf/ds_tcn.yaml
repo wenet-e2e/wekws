@@ -5,11 +5,12 @@ dataset_conf:
     resample_conf:
         resample_rate: 16000
     speed_perturb: false
-    fbank_conf:
+    feature_extraction_conf:
+        feature_type: 'fbank'
         num_mel_bins: 40
         frame_shift: 10
         frame_length: 25
-        dither: 0.1
+        dither: 1.0
     spec_aug: true
     spec_aug_conf:
         num_t_mask: 1
@@ -24,9 +25,9 @@ dataset_conf:
 
 model:
     hidden_dim: 64
-    subsampling:
+    preprocessing:
         type: linear
-    body:
+    backbone:
         type: tcn
         ds: true
         num_layers: 4
