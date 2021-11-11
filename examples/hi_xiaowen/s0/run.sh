@@ -105,7 +105,7 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     --score_file $result_dir/score.txt
 fi
 
-if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then 
+if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
   # Compute detection error tradeoff
   result_dir=$dir/test_$(basename $score_checkpoint)
   for keyword in 0 1; do
