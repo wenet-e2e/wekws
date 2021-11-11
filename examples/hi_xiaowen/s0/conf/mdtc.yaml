@@ -31,10 +31,10 @@ model:
         type: none
     backbone:
         type: mdtc
-        num_stack: 4  
+        num_stack: 4
         stack_size: 4
         kernel_size: 5
-        hidden_dim: 64  
+        hidden_dim: 64
 
 optim: adam
 optim_conf:
@@ -44,11 +44,3 @@ training_config:
     grad_clip: 5
     max_epoch: 100
     log_interval: 10
-
-
-    
-
-
-
-
-
