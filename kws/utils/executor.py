@@ -17,8 +17,12 @@ import logging
 import torch
 from torch.nn.utils import clip_grad_norm_
 
-from kws.model.loss import max_polling_loss
+from kws.model.max_pooling import max_pooling_loss
+from kws.model.ce import cross_entropy
 
+
+criterion_dict = {'CE': cross_entropy, 
+                  'max_pooling': max_pooling_loss}
 
 class Executor:
     def __init__(self):
@@ -32,6 +36,7 @@ class Executor:
         log_interval = args.get('log_interval', 10)
         epoch = args.get('epoch', 0)
         min_duration = args.get('min_duration', 0)
+        criterion = criterion_dict[args.get('criterion', max_pooling_loss)]
 
         num_total_batch = 0
         total_loss = 0.0
@@ -44,7 +49,7 @@ class Executor:
             if num_utts == 0:
                 continue
             logits = model(feats)
-            loss, acc = max_polling_loss(logits, target, feats_lengths,
+            loss, acc = criterion(logits, target, feats_lengths,
                                          min_duration)
             loss.backward()
             grad_norm = clip_grad_norm_(model.parameters(), clip)
@@ -61,6 +66,7 @@ class Executor:
         model.eval()
         log_interval = args.get('log_interval', 10)
         epoch = args.get('epoch', 0)
+        criterion = criterion_dict[args.get('criterion', max_pooling_loss)]
         # in order to avoid division by 0
         num_seen_utts = 1
         total_loss = 0.0
@@ -75,7 +81,7 @@ class Executor:
                     continue
                 num_seen_utts += num_utts
                 logits = model(feats)
-                loss, acc = max_polling_loss(logits, target, feats_lengths)
+                loss, acc = criterion(logits, target, feats_lengths)
                 if torch.isfinite(loss):
                     num_seen_utts += num_utts
                     total_loss += loss.item() * num_utts

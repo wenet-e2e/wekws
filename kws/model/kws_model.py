@@ -21,8 +21,8 @@ from kws.model.cmvn import GlobalCMVN
 from kws.model.subsampling import LinearSubsampling1, Conv1dSubsampling1
 from kws.model.tcn import TCN, CnnBlock, DsCnnBlock
 from kws.model.mdtc import MDTC
+from kws.model.classifier import GlobalClassifier, LastClassifier
 from kws.utils.cmvn import load_cmvn
-
 
 class KWSModel(torch.nn.Module):
     """Our model consists of four parts:
@@ -39,6 +39,7 @@ class KWSModel(torch.nn.Module):
         global_cmvn: Optional[torch.nn.Module],
         preprocessing: Optional[torch.nn.Module],
         backbone: torch.nn.Module,
+        classifier: torch.nn.Module
     ):
         super().__init__()
         self.idim = idim
@@ -47,7 +48,7 @@ class KWSModel(torch.nn.Module):
         self.global_cmvn = global_cmvn
         self.preprocessing = preprocessing
         self.backbone = backbone
-        self.classifier = torch.nn.Linear(hdim, odim)
+        self.classifier = classifier
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.global_cmvn is not None:
@@ -56,7 +57,6 @@ class KWSModel(torch.nn.Module):
             x = self.preprocessing(x)
         x, _ = self.backbone(x)
         x = self.classifier(x)
-        x = torch.sigmoid(x)
         return x
 
 
@@ -119,9 +119,18 @@ def init_model(configs):
                         kernel_size,
                         causal=True)
     else:
-        print('Unknown body type {}'.format(backbone_type))
+        print('Unknown backbone type {}'.format(backbone_type))
         sys.exit(1)
-
+    classifier_type = configs['classifier']['type']
+    if classifier_type == 'linear':
+        classifier = torch.nn.Linear(hidden_dim, output_dim)
+    elif classifier_type == 'global':
+        classifier = GlobalClassifier(torch.nn.Linear(hidden_dim, output_dim))
+    elif classifier_type == 'last':
+        classifier = LastClassifier(torch.nn.Linear(hidden_dim, output_dim))
+    else:
+        print('Unknown classifier type {}'.format(classifier_type))
+        sys.exit(1)
     kws_model = KWSModel(input_dim, output_dim, hidden_dim, global_cmvn,
-                         preprocessing, backbone)
+                         preprocessing, backbone, classifier)
     return kws_model

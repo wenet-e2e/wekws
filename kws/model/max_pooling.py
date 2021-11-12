@@ -17,7 +17,7 @@ import torch
 from kws.utils.mask import padding_mask
 
 
-def max_polling_loss(logits: torch.Tensor,
+def max_pooling_loss(logits: torch.Tensor,
                      target: torch.Tensor,
                      lengths: torch.Tensor,
                      min_duration: int = 0):
@@ -37,6 +37,7 @@ def max_polling_loss(logits: torch.Tensor,
         (float): loss of current batch
         (float): accuracy of current batch
     """
+    logits = torch.sigmoid(logits)
     mask = padding_mask(lengths)
     num_utts = logits.size(0)
     num_keywords = logits.size(2)
