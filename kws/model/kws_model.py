@@ -24,6 +24,7 @@ from kws.model.mdtc import MDTC
 from kws.model.classifier import GlobalClassifier, LastClassifier
 from kws.utils.cmvn import load_cmvn
 
+
 class KWSModel(torch.nn.Module):
     """Our model consists of four parts:
     1. global_cmvn: Optional, (idim, idim)
@@ -31,16 +32,10 @@ class KWSModel(torch.nn.Module):
     3. backbone: backbone or feature extractor of the whole network, (hdim, hdim)
     4. classifier: output layer or classifier of KWS model, (hdim, odim)
     """
-    def __init__(
-        self,
-        idim: int,
-        odim: int,
-        hdim: int,
-        global_cmvn: Optional[torch.nn.Module],
-        preprocessing: Optional[torch.nn.Module],
-        backbone: torch.nn.Module,
-        classifier: torch.nn.Module
-    ):
+    def __init__(self, idim: int, odim: int, hdim: int,
+                 global_cmvn: Optional[torch.nn.Module],
+                 preprocessing: Optional[torch.nn.Module],
+                 backbone: torch.nn.Module, classifier: torch.nn.Module):
         super().__init__()
         self.idim = idim
         self.odim = odim

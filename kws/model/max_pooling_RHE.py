@@ -39,7 +39,7 @@ def RHE(indice: torch.Tensor, k: int):
             reserve.append(indice[i])
             rm_s = max(indice[i] - k, 0)
             rm_e = min(indice[i] + k, lenght)
-            available_indice[rm_s : rm_e + 1] = 0
+            available_indice[rm_s:rm_e + 1] = 0
         else:
             continue
 
@@ -48,7 +48,9 @@ def RHE(indice: torch.Tensor, k: int):
     return torch.tensor(reserve).long()
 
 
-def downsample_training_sample_and_calculate_loss(logits, targets, ratio: float = 10):
+def downsample_training_sample_and_calculate_loss(logits,
+                                                  targets,
+                                                  ratio: float = 10):
     num_training = 0
     loss = 0
     for i in range(len(logits)):
@@ -69,8 +71,11 @@ def downsample_training_sample_and_calculate_loss(logits, targets, ratio: float 
     return loss / num_training
 
 
-def max_pooling_RHE_binary_CE(logits, targets, lengths, RHE_thr=10000, max_ratio=1):
-
+def max_pooling_RHE_binary_CE(logits,
+                              targets,
+                              lengths,
+                              RHE_thr=10000,
+                              max_ratio=1):
     """Max-pooling loss with regional hard example mining
         For each keyword utterance, select the frame with the highest posterior.
             The keyword is triggered when any of the frames is triggered.
@@ -108,7 +113,8 @@ def max_pooling_RHE_binary_CE(logits, targets, lengths, RHE_thr=10000, max_ratio
                 if logits[i, max_idx, j] >= 0.5:
                     num_hit += 1
             else:
-                sorted_logits, sorted_index = torch.sort(logits[i, :end_idx], dim=0)
+                sorted_logits, sorted_index = torch.sort(logits[i, :end_idx],
+                                                         dim=0)
                 reversed_index = torch.flip(sorted_index, dims=[0])
                 selected_indexes = RHE(reversed_index[:, j], RHE_thr)
                 new_logits[j].append(logits[i, selected_indexes, j])

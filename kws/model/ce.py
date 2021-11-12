@@ -15,15 +15,22 @@
 import torch
 import torch.nn as nn
 
-def acc_frame(logits: torch.Tensor, target: torch.Tensor, ):
+
+def acc_frame(
+    logits: torch.Tensor,
+    target: torch.Tensor,
+):
     if logits is None:
         return 0
     pred = logits.max(1, keepdim=True)[1]
     correct = pred.eq(target.long().view_as(pred)).sum().item()
-    return correct*100.0/logits.size(0)
+    return correct * 100.0 / logits.size(0)
 
-def cross_entropy(logits: torch.Tensor, target: torch.Tensor, 
-                  lengths: torch.Tensor, min_duration: int = 0):
+
+def cross_entropy(logits: torch.Tensor,
+                  target: torch.Tensor,
+                  lengths: torch.Tensor,
+                  min_duration: int = 0):
     """ Cross Entropy Loss
     Attributes:
         logits: (B, D), D is the number of keywords plus 1 (non-keyword)
