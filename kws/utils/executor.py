@@ -18,11 +18,13 @@ import torch
 from torch.nn.utils import clip_grad_norm_
 
 from kws.model.max_pooling import max_pooling_loss
+from kws.model.max_pooling_RHE import max_pooling_RHE_binary_CE
 from kws.model.ce import cross_entropy
 
 
 criterion_dict = {'CE': cross_entropy, 
-                  'max_pooling': max_pooling_loss}
+                  'max_pooling': max_pooling_loss,
+                  'RHE': max_pooling_RHE_binary_CE}
 
 class Executor:
     def __init__(self):

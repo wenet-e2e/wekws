@@ -22,3 +22,12 @@ class LastClassifier(nn.Module):
     def forward(self, x: torch.Tensor):
         x = x[:, -1, :]
         return self.classifier(x)
+
+class ElementClassifier(nn.Module):
+    """Classify all the frames in an utterance"""
+    def __init__(self, classifier: nn.Module):
+        super(ElementClassifier, self).__init__()
+        self.classifier = classifier
+
+    def forward(self, x: torch.Tensor):
+        return self.classifier(x)

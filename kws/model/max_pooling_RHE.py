@@ -74,7 +74,7 @@ def downsample_training_sample_and_calculate_loss(logits,
 def max_pooling_RHE_binary_CE(logits,
                               targets,
                               lengths,
-                              RHE_thr=10000,
+                              RHE_thr=100,
                               max_ratio=1):
     """Max-pooling loss with regional hard example mining
         For each keyword utterance, select the frame with the highest posterior.
