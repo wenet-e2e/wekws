@@ -17,7 +17,8 @@ import torch
 import numpy as np
 
 def RHE(indice: torch.Tensor, k: int):
-    """Regional hard example mining from 'Mining effective negative training samples for keyword spotting'
+    """Regional hard example mining from 
+       'Mining effective negative training samples for keyword spotting'
 
     Attributes:
         index: indice of
@@ -77,8 +78,7 @@ def max_pooling_RHE_binary_CE(logits,
     """Max-pooling loss with regional hard example mining
         For each keyword utterance, select the frame with the highest posterior.
         The keyword is triggered when any of the frames is triggered.
-        
-        For each non-keyword utterance, select several hard examples using the 
+        For each non-keyword utterance, select several hard examples using the
         RHE algorithm.
 
     Attributes:
