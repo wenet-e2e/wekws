@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import os
-import sys
 import argparse
 
 CLASSES = 'unknown, yes, no, up, down, left, right, on, off, stop, go'.split(
