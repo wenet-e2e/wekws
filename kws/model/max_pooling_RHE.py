@@ -78,8 +78,10 @@ def max_pooling_RHE_binary_CE(logits,
                               max_ratio=1):
     """Max-pooling loss with regional hard example mining
         For each keyword utterance, select the frame with the highest posterior.
-            The keyword is triggered when any of the frames is triggered.
-        For each non-keyword utterance, select several hard examples using the RHE algorithm.
+        The keyword is triggered when any of the frames is triggered.
+        
+        For each non-keyword utterance, select several hard examples using the 
+        RHE algorithm.
 
     Attributes:
         logits: (B, T, D), D is the number of keywords
