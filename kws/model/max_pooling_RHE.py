@@ -17,7 +17,7 @@ import torch
 import numpy as np
 
 def RHE(indice: torch.Tensor, k: int):
-    """Regional hard example mining from 
+    """Regional hard example mining from
        'Mining effective negative training samples for keyword spotting'
 
     Attributes:
