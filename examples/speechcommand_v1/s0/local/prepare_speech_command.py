@@ -7,14 +7,11 @@ CLASSES = 'unknown, yes, no, up, down, left, right, on, off, stop, go'.split(
 CLASS_TO_IDX = {CLASSES[i]: str(i) for i in range(len(CLASSES))}
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description=
-        'prepare kaldi format file for google speech command dataset ')
+    parser = argparse.ArgumentParser(description='prepare kaldi format file')
     parser.add_argument(
         '--wav_list',
         required=True,
-        help=
-        'wave list is a file containts full path of a wav file in google speech command dataset'
+        help='wave_list containts full path of a wav file'
     )
     parser.add_argument('--data_dir',
                         required=True,
