@@ -22,7 +22,7 @@ from kws.model.max_pooling_RHE import max_pooling_RHE_binary_CE
 from kws.model.ce import cross_entropy
 
 
-criterion_dict = {'CE': cross_entropy, 
+criterion_dict = {'CE': cross_entropy,
                   'max_pooling': max_pooling_loss,
                   'RHE': max_pooling_RHE_binary_CE}
 
