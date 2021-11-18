@@ -41,7 +41,7 @@ if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
     data=data/$x
     mkdir -p $data
     # make wav.scp utt2spk text file
-    find $speech_command_dir/$x -name *.wav | grep -v "_background_noise_" > $data/wav.list  
+    find $speech_command_dir/$x -name *.wav | grep -v "_background_noise_" > $data/wav.list
     python local/prepare_speech_command.py --wav_list=$data/wav.list --data_dir=$data
   done
 fi
