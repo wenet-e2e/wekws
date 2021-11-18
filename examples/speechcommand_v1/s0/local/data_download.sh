@@ -14,7 +14,7 @@ url=http://download.tensorflow.org/data/$file_name
 mkdir -p $data_dir
 if [ ! -f $data_dir/$file_name ]; then
     echo "downloading $url..."
-    wget -O $data_dir/$file_name $url 
+    wget -O $data_dir/$file_name $url
 else
     echo "$file_name exist in $data_dir, skip download it"
 fi
