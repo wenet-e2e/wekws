@@ -8,3 +8,5 @@ FRRs with FAR fixed at once per hour:
 | DS_TCN           | 21        | 80        | 0.010807   | 0.014754     |
 | DS_TCN           | 21        | 80(avg30) | 0.009867   | 0.014472     |
 | DS_TCN(spec_aug) | 21        | 80(avg30) | 0.029039   | 0.022648     |
+| MDTC             | 156       | 80(avg10) | 0.007142   | 0.005920     |
+| MDTC_Small       | 31        | 80(avg10) | 0.005357   | 0.005920     |

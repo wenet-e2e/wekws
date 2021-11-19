@@ -21,7 +21,7 @@ def max_polling_loss(logits: torch.Tensor,
                      target: torch.Tensor,
                      lengths: torch.Tensor,
                      min_duration: int = 0):
-    """ Max-pooling loss
+    ''' Max-pooling loss
         For keyword, select the frame with the highest posterior.
             The keyword is triggered when any of the frames is triggered.
         For none keyword, select the hardest frame, namely the frame
@@ -36,7 +36,7 @@ def max_polling_loss(logits: torch.Tensor,
     Returns:
         (float): loss of current batch
         (float): accuracy of current batch
-    """
+    '''
     mask = padding_mask(lengths)
     num_utts = logits.size(0)
     num_keywords = logits.size(2)
