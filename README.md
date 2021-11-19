@@ -16,6 +16,23 @@ We are going to support the following typical applications of wakeup word:
 * Customizable wake-up word
 * Personalized wake-up word, i.e. combination of wake-up word detection and voiceprint
 
+## Installation
+
+- Clone the repo
+``` sh
+git clone https://github.com/wenet-e2e/wenet.git
+```
+
+- Install Conda: please see https://docs.conda.io/en/latest/miniconda.html
+- Create Conda env:
+
+``` sh
+conda create -n wenet python=3.8
+conda activate wenet
+pip install -r requirements.txt
+conda install pytorch=1.10.0 torchaudio=0.10.0 cudatoolkit=11.1 -c pytorch -c conda-forge
+```
+
 ## Dataset
 
 We plan to support a variaty of open source wake-up word datasets, include but not limited to:
