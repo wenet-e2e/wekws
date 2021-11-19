@@ -41,8 +41,7 @@ model:
 optim: adam
 optim_conf:
     lr: 0.001
-    weight_decay: 5e-5
-    warm_up_step: 2500
+    weight_decay: 0.00005
 
 training_config:
     grad_clip: 5
