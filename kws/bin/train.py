@@ -30,6 +30,7 @@ from kws.dataset.dataset import Dataset
 from kws.utils.checkpoint import load_checkpoint, save_checkpoint
 from kws.model.kws_model import init_model
 from kws.utils.executor import Executor
+from kws.utils.train_utils import count_parameters, set_mannul_seed
 
 
 def get_args():
@@ -42,6 +43,7 @@ def get_args():
                         default=-1,
                         help='gpu id for this local rank, -1 for cpu')
     parser.add_argument('--model_dir', required=True, help='save model dir')
+    parser.add_argument('--seed', dest='seed', default=777, help='random seed')
     parser.add_argument('--checkpoint', help='checkpoint model')
     parser.add_argument('--tensorboard_dir',
                         default='tensorboard',
@@ -101,6 +103,7 @@ def main():
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(levelname)s %(message)s')
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
+    set_mannul_seed(args.gpu)
     # Set random seed
     torch.manual_seed(777)
     print(args)
@@ -155,7 +158,7 @@ def main():
     # Init asr model from configs
     model = init_model(configs['model'])
     print(model)
-    num_params = sum(p.numel() for p in model.parameters())
+    num_params = count_parameters(model)
     print('the number of model params: {}'.format(num_params))
 
     # !!!IMPORTANT!!!
@@ -192,7 +195,9 @@ def main():
         device = torch.device('cuda' if use_cuda else 'cpu')
         model = model.to(device)
 
-    optimizer = optim.Adam(model.parameters(), **configs['optim_conf'])
+    optimizer = optim.Adam(model.parameters(),
+                           lr=configs['optim_conf']['lr'],
+                           weight_decay=configs['optim_conf']['weight_decay'])
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer,
         mode='min',

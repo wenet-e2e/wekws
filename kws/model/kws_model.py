@@ -56,7 +56,6 @@ class KWSModel(torch.nn.Module):
             x = self.preprocessing(x)
         x, _ = self.backbone(x)
         x = self.classifier(x)
-        x = torch.sigmoid(x)
         return x
 
 
