@@ -9,13 +9,13 @@ stage=0
 stop_stage=4
 num_keywords=2
 
-config=conf/mdtc.yaml
+config=conf/mdtc_small.yaml
 norm_mean=false
 norm_var=false
 gpu_id=0
 
 checkpoint=
-dir=exp/mdtc
+dir=exp/mdtc_small
 
 num_average=10
 score_checkpoint=$dir/avg_${num_average}.pt
