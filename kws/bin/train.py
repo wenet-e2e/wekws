@@ -103,9 +103,9 @@ def main():
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(levelname)s %(message)s')
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
-    set_mannul_seed(args.gpu)
+
     # Set random seed
-    torch.manual_seed(777)
+    set_mannul_seed(args.seed)
     print(args)
     with open(args.config, 'r') as fin:
         configs = yaml.load(fin, Loader=yaml.FullLoader)
