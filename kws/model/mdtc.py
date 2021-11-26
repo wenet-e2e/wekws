@@ -241,16 +241,27 @@ class MDTC(nn.Module):
         outputs = outputs.transpose(1, 2)
         outputs_list = []
         outputs = self.relu(self.preprocessor(outputs))
-        for i in range(len(self.blocks)):
-            outputs = self.blocks[i](outputs)
+        for block in self.blocks:
+            outputs = block(outputs)
             outputs_list.append(outputs)
 
-        if self.causal:
-            outputs_list = self.normalize_length_causal(outputs_list)
-        else:
-            outputs_list = self.normalize_length(outputs_list)
+        normalized_outputs = []
+        output_size = outputs_list[-1].shape[-1]
+        for x in outputs_list:
+            remove_length = x.shape[-1] - output_size
+            if remove_length != 0:
+                if self.causal:
+                    normalized_outputs.append(x[:, :, remove_length:])
+                else:
+                    remove_length = remove_length // 2
+                    normalized_outputs.append(x[:, :,
+                                              remove_length:-remove_length])
+            else:
+                normalized_outputs.append(x)
 
-        outputs = sum(outputs_list)
+        outputs = torch.zeros_like(outputs_list[-1], dtype=outputs_list[-1].dtype)
+        for x in normalized_outputs:
+            outputs += x
         outputs = outputs.transpose(1, 2)
         return outputs, None
 

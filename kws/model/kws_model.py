@@ -18,7 +18,7 @@ from typing import Optional
 import torch
 
 from kws.model.cmvn import GlobalCMVN
-from kws.model.subsampling import LinearSubsampling1, Conv1dSubsampling1
+from kws.model.subsampling import LinearSubsampling1, Conv1dSubsampling1, NoSubsampling
 from kws.model.tcn import TCN, CnnBlock, DsCnnBlock
 from kws.model.mdtc import MDTC
 from kws.utils.cmvn import load_cmvn
@@ -52,8 +52,7 @@ class KWSModel(torch.nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.global_cmvn is not None:
             x = self.global_cmvn(x)
-        if self.preprocessing:
-            x = self.preprocessing(x)
+        x = self.preprocessing(x)
         x, _ = self.backbone(x)
         x = self.classifier(x)
         x = torch.sigmoid(x)
@@ -82,7 +81,7 @@ def init_model(configs):
     elif prep_type == 'cnn1d_s1':
         preprocessing = Conv1dSubsampling1(input_dim, hidden_dim)
     elif prep_type == 'none':
-        preprocessing = None
+        preprocessing = NoSubsampling()
     else:
         print('Unknown preprocessing type {}'.format(prep_type))
         sys.exit(1)
