@@ -102,7 +102,8 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     --test_data data/test/data.list \
     --batch_size 256 \
     --checkpoint $score_checkpoint \
-    --score_file $result_dir/score.txt
+    --score_file $result_dir/score.txt \
+    --num_workers 8
 fi
 
 if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
