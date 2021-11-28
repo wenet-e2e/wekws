@@ -1,4 +1,4 @@
-# wenet-kws
+# WeKws
 
 Production First and Production Ready End-to-End Keyword Spotting Toolkit.
 
@@ -20,7 +20,7 @@ We are going to support the following typical applications of wakeup word:
 
 - Clone the repo
 ``` sh
-git clone https://github.com/wenet-e2e/wenet.git
+git clone https://github.com/wenet-e2e/wekws.git
 ```
 
 - Install Conda: please see https://docs.conda.io/en/latest/miniconda.html
