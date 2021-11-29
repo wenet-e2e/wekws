@@ -23,6 +23,14 @@ class SubsamplingBase(torch.nn.Module):
         super().__init__()
         self.subsampling_rate = 1
 
+class NoSubsampling(SubsamplingBase):
+    """No subsampling in accordance to the 'none' preprocessing
+    """
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return x
 
 class LinearSubsampling1(SubsamplingBase):
     """Linear transform the input without subsampling
