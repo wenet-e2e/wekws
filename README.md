@@ -56,17 +56,17 @@ We plan to support a variaty of hardwares and platforms, including:
 
 ## Reference
 
-* Mining Effective Negative Training Samples for Keyword Spotting
+* Mining Effective Negative Training Samples for Keyword Spotting(
   [github]( https://github.com/jingyonghou/KWS_Max-pooling_RHE),
-  [paper](https://www.microsoft.com/en-us/research/uploads/prod/2020/04/ICASSP2020_Max_pooling_KWS.pdf)
-* Max-pooling Loss Training of Long Short-term Memory Networks for Small-footprint Keyword Spotting
-  [paper](https://arxiv.org/pdf/1705.02411.pdf)
-* A depthwise separable convolutional neural network for keyword spotting on an embedded system
+  [paper](https://www.microsoft.com/en-us/research/uploads/prod/2020/04/ICASSP2020_Max_pooling_KWS.pdf))
+* Max-pooling Loss Training of Long Short-term Memory Networks for Small-footprint Keyword Spotting(
+  [paper](https://arxiv.org/pdf/1705.02411.pdf))
+* A depthwise separable convolutional neural network for keyword spotting on an embedded system(
   [github](https://github.com/PeterMS123/KWS-DS-CNN-for-embedded),
-  [paper](https://asmp-eurasipjournals.springeropen.com/track/pdf/10.1186/s13636-020-00176-2.pdf)
-* Hello Edge: Keyword Spotting on Microcontrollers
+  [paper](https://asmp-eurasipjournals.springeropen.com/track/pdf/10.1186/s13636-020-00176-2.pdf))
+* Hello Edge: Keyword Spotting on Microcontrollers(
   [github](https://arxiv.org/pdf/1711.07128.pdf),
-  [paper](https://github.com/ARM-software/ML-KWS-for-MCU)
-* An Empirical Evaluation of Generic Convolutional and Recurrent Networks for Sequence Modeling
+  [paper](https://github.com/ARM-software/ML-KWS-for-MCU))
+* An Empirical Evaluation of Generic Convolutional and Recurrent Networks for Sequence Modeling(
   [github](http://github.com/locuslab/TCN),
-  [paper](https://arxiv.org/pdf/1803.01271.pdf)
+  [paper](https://arxiv.org/pdf/1803.01271.pdf))
