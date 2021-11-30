@@ -186,10 +186,10 @@ class MDTC(nn.Module):
         causal: bool,
     ):
         super(MDTC, self).__init__()
-        self.kernel_size = kernel_size
         if kernel_size % 2 == 0:
             print("The kernel size of MDTC must be an odd number")
             exit(1)
+        self.kernel_size = kernel_size
         self.causal = causal
         self.preprocessor = TCNBlock(in_channels,
                                      res_channels,
