@@ -186,6 +186,7 @@ class MDTC(nn.Module):
         causal: bool,
     ):
         super(MDTC, self).__init__()
+        assert kernel_size % 2 == 0
         self.kernel_size = kernel_size
         self.causal = causal
         self.preprocessor = TCNBlock(in_channels,
@@ -203,29 +204,6 @@ class MDTC(nn.Module):
             self.receptive_fields += self.blocks[-1].receptive_fields
         self.half_receptive_fields = self.receptive_fields // 2
         print('Receptive Fields: %d' % self.receptive_fields)
-
-    def normalize_length_causal(self, skip_connections: list):
-        output_size = skip_connections[-1].shape[-1]
-        normalized_outputs = []
-        for x in skip_connections:
-            remove_length = x.shape[-1] - output_size
-            if remove_length != 0:
-                normalized_outputs.append(x[:, :, remove_length:])
-            else:
-                normalized_outputs.append(x)
-        return normalized_outputs
-
-    def normalize_length(self, skip_connections: list):
-        output_size = skip_connections[-1].shape[-1]
-        normalized_outputs = []
-        for x in skip_connections:
-            remove_length = (x.shape[-1] - output_size) // 2
-            if remove_length != 0:
-                normalized_outputs.append(x[:, :,
-                                            remove_length:-remove_length])
-            else:
-                normalized_outputs.append(x)
-        return normalized_outputs
 
     def forward(self, x: torch.Tensor):
         if self.causal:
@@ -249,13 +227,13 @@ class MDTC(nn.Module):
         output_size = outputs_list[-1].shape[-1]
         for x in outputs_list:
             remove_length = x.shape[-1] - output_size
-            if remove_length != 0:
-                if self.causal:
-                    normalized_outputs.append(x[:, :, remove_length:])
-                else:
-                    remove_length = remove_length // 2
-                    normalized_outputs.append(x[:, :,
-                                              remove_length:-remove_length])
+            if self.causal and remove_length > 0:
+                normalized_outputs.append(x[:, :, remove_length:])
+            elif not self.causal and remove_length > 1:
+                half_remove_length = remove_length // 2
+                normalized_outputs.append(
+                    x[:, :, half_remove_length:-half_remove_length]
+                )
             else:
                 normalized_outputs.append(x)
 
