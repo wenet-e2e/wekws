@@ -41,7 +41,7 @@ class KWSModel(torch.nn.Module):
         global_cmvn: Optional[torch.nn.Module],
         preprocessing: Optional[torch.nn.Module],
         backbone: torch.nn.Module,
-    classifier: torch.nn.Module
+        classifier: torch.nn.Module
     ):
         super().__init__()
         self.idim = idim

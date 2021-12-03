@@ -6,7 +6,7 @@
 
 export CUDA_VISIBLE_DEVICES="0"
 
-stage=3
+stage=2
 stop_stage=4
 num_keywords=11
 
@@ -21,7 +21,8 @@ dir=exp/mdtc_debug
 num_average=1
 score_checkpoint=$dir/avg_${num_average}.pt
 
-download_dir=/mnt/mnt-data-3/jingyong.hou/data # your data dir
+# your data dir
+download_dir=/mnt/mnt-data-3/jingyong.hou/data
 speech_command_dir=$download_dir/speech_commands_v1
 . tools/parse_options.sh || exit 1;
 
@@ -41,7 +42,7 @@ if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
     data=data/$x
     mkdir -p $data
     # make wav.scp utt2spk text file
-    find $speech_command_dir/$x -name *.wav | grep -v "_background_noise_" > $data/wav.list  
+    find $speech_command_dir/$x -name *.wav | grep -v "_background_noise_" > $data/wav.list
     python local/prepare_speech_command.py --wav_list=$data/wav.list --data_dir=$data
   done
 fi

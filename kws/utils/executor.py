@@ -44,8 +44,9 @@ class Executor:
             if num_utts == 0:
                 continue
             logits = model(feats)
-            loss, acc = criterion(args.get('criterion', 'max_pooling'),
-                                      logits, target, feats_lengths)
+            loss, acc = criterion(
+                           args.get('criterion', 'max_pooling'),
+                           logits, target, feats_lengths)
             loss.backward()
             grad_norm = clip_grad_norm_(model.parameters(), clip)
             if torch.isfinite(grad_norm):

@@ -1,4 +1,5 @@
-"""Splits the google speech commands into train, validation and test set """
+#!/usr/bin/env python
+'''Splits the google speech commands into train, validation and test set'''
 
 import os
 import shutil

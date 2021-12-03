@@ -27,7 +27,6 @@ from kws.dataset.dataset import Dataset
 from kws.model.kws_model import init_model
 from kws.utils.checkpoint import load_checkpoint
 from kws.utils.executor import Executor
-from kws.utils.mask import padding_mask
 
 
 def get_args():
