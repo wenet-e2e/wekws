@@ -6,7 +6,7 @@
 
 export CUDA_VISIBLE_DEVICES="0"
 
-stage=2
+stage=-1
 stop_stage=4
 num_keywords=11
 
@@ -18,7 +18,7 @@ gpu_id=4
 checkpoint=
 dir=exp/mdtc_debug
 
-num_average=1
+num_average=10
 score_checkpoint=$dir/avg_${num_average}.pt
 
 # your data dir
@@ -88,7 +88,7 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     --num ${num_average} \
     --val_best
 
-  # Compute posterior score
+  # Testing
   result_dir=$dir/test_$(basename $score_checkpoint)
   mkdir -p $result_dir
   python kws/bin/test.py --gpu 3 \
