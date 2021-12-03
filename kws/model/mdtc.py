@@ -186,7 +186,7 @@ class MDTC(nn.Module):
         causal: bool,
     ):
         super(MDTC, self).__init__()
-        assert kernel_size % 2 == 0
+        assert kernel_size % 2 == 1
         self.kernel_size = kernel_size
         self.causal = causal
         self.preprocessor = TCNBlock(in_channels,
