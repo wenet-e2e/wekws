@@ -31,4 +31,3 @@ class ElementClassifier(nn.Module):
 
     def forward(self, x: torch.Tensor):
         return self.classifier(x)
-
