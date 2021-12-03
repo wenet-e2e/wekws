@@ -16,8 +16,10 @@ import sys
 from typing import Optional
 
 import torch
+import torch.nn as nn
 
 from kws.model.cmvn import GlobalCMVN
+from kws.model.classifier import GlobalClassifier, LastClassifier
 from kws.model.subsampling import LinearSubsampling1, Conv1dSubsampling1, NoSubsampling
 from kws.model.tcn import TCN, CnnBlock, DsCnnBlock
 from kws.model.mdtc import MDTC
@@ -39,6 +41,7 @@ class KWSModel(torch.nn.Module):
         global_cmvn: Optional[torch.nn.Module],
         preprocessing: Optional[torch.nn.Module],
         backbone: torch.nn.Module,
+    classifier: torch.nn.Module
     ):
         super().__init__()
         self.idim = idim
@@ -47,7 +50,7 @@ class KWSModel(torch.nn.Module):
         self.global_cmvn = global_cmvn
         self.preprocessing = preprocessing
         self.backbone = backbone
-        self.classifier = torch.nn.Linear(hdim, odim)
+        self.classifier = classifier
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.global_cmvn is not None:
@@ -55,7 +58,6 @@ class KWSModel(torch.nn.Module):
         x = self.preprocessing(x)
         x, _ = self.backbone(x)
         x = self.classifier(x)
-        x = torch.sigmoid(x)
         return x
 
 
@@ -110,17 +112,34 @@ def init_model(configs):
         num_stack = configs['backbone']['num_stack']
         kernel_size = configs['backbone']['kernel_size']
         hidden_dim = configs['backbone']['hidden_dim']
-
+        causal = configs['backbone']['causal']
         backbone = MDTC(num_stack,
                         stack_size,
                         input_dim,
                         hidden_dim,
                         kernel_size,
-                        causal=True)
+                        causal=causal)
     else:
         print('Unknown body type {}'.format(backbone_type))
         sys.exit(1)
 
+    classifier_type = configs['classifier']['type']
+    dropout = configs['classifier']['dropout']
+    classifier_base = nn.Sequential(
+        nn.Linear(hidden_dim, 64),
+        nn.ReLU(),
+        nn.Dropout(dropout),
+        nn.Linear(64, output_dim),
+    )
+    if classifier_type == 'linear':
+        classifier = classifier_base
+    elif classifier_type == 'global':
+        classifier = GlobalClassifier(classifier_base)
+    elif classifier_type == 'last':
+        classifier = LastClassifier(classifier_base)
+    else:
+        print('Unknown classifier type {}'.format(classifier_type))
+        sys.exit(1)
     kws_model = KWSModel(input_dim, output_dim, hidden_dim, global_cmvn,
-                         preprocessing, backbone)
+                         preprocessing, backbone, classifier)
     return kws_model
