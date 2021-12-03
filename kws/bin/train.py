@@ -220,8 +220,8 @@ def main():
         training_config['epoch'] = epoch
         lr = optimizer.param_groups[0]['lr']
         logging.info('Epoch {} TRAIN info lr {}'.format(epoch, lr))
-        #executor.train(model, optimizer, train_data_loader, device, writer,
-        #               training_config)
+        executor.train(model, optimizer, train_data_loader, device, writer,
+                       training_config)
         cv_loss, cv_acc = executor.cv(model, cv_data_loader, device, training_config)
         logging.info('Epoch {} CV info cv_loss {} cv_acc {}'
                      .format(epoch, cv_loss, cv_acc))
