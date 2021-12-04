@@ -164,9 +164,9 @@ def main():
     # !!!IMPORTANT!!!
     # Try to export the model by script, if fails, we should refine
     # the code to satisfy the script export requirements
-    if args.rank == 0:
-        script_model = torch.jit.script(model)
-        script_model.save(os.path.join(args.model_dir, 'init.zip'))
+    # if args.rank == 0:
+    # script_model = torch.jit.script(model)
+    # script_model.save(os.path.join(args.model_dir, 'init.zip'))
     executor = Executor()
     # If specify checkpoint, load some info from checkpoint
     if args.checkpoint is not None:
@@ -196,7 +196,8 @@ def main():
         model = model.to(device)
 
     optimizer = optim.Adam(model.parameters(),
-                           lr=configs['optim_conf']['lr'])
+                           lr=configs['optim_conf']['lr'],
+                           weight_decay=configs['optim_conf']['weight_decay'])
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer,
         mode='min',
@@ -222,9 +223,8 @@ def main():
         logging.info('Epoch {} TRAIN info lr {}'.format(epoch, lr))
         executor.train(model, optimizer, train_data_loader, device, writer,
                        training_config)
-        cv_loss, cv_acc = executor.cv(model, cv_data_loader, device, training_config)
-        logging.info('Epoch {} CV info cv_loss {} cv_acc {}'
-                     .format(epoch, cv_loss, cv_acc))
+        cv_loss = executor.cv(model, cv_data_loader, device, training_config)
+        logging.info('Epoch {} CV info cv_loss {}'.format(epoch, cv_loss))
 
         if args.rank == 0:
             save_model_path = os.path.join(model_dir, '{}.pt'.format(epoch))
@@ -234,7 +234,6 @@ def main():
                 'cv_loss': cv_loss,
             })
             writer.add_scalar('epoch/cv_loss', cv_loss, epoch)
-            writer.add_scalar('epoch/cv_acc', cv_acc, epoch)
             writer.add_scalar('epoch/lr', lr, epoch)
         final_epoch = epoch
         scheduler.step(cv_loss)
