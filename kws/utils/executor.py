@@ -17,7 +17,7 @@ import logging
 import torch
 from torch.nn.utils import clip_grad_norm_
 
-from kws.model.loss import criterion
+from kws.model.loss import max_polling_loss
 
 
 class Executor:
@@ -44,8 +44,8 @@ class Executor:
             if num_utts == 0:
                 continue
             logits = model(feats)
-            loss_type = args.get('criterion', 'max_pooling')
-            loss, acc = criterion(loss_type, logits, target, feats_lengths)
+            loss, acc = max_polling_loss(logits, target, feats_lengths,
+                                         min_duration)
             loss.backward()
             grad_norm = clip_grad_norm_(model.parameters(), clip)
             if torch.isfinite(grad_norm):
@@ -64,7 +64,6 @@ class Executor:
         # in order to avoid division by 0
         num_seen_utts = 1
         total_loss = 0.0
-        total_acc = 0.0
         with torch.no_grad():
             for batch_idx, batch in enumerate(data_loader):
                 key, feats, target, feats_lengths = batch
@@ -74,19 +73,15 @@ class Executor:
                 num_utts = feats_lengths.size(0)
                 if num_utts == 0:
                     continue
+                num_seen_utts += num_utts
                 logits = model(feats)
-                loss, acc = criterion(args.get('criterion', 'max_pooling'),
-                                      logits, target, feats_lengths)
+                loss, acc = max_polling_loss(logits, target, feats_lengths)
                 if torch.isfinite(loss):
                     num_seen_utts += num_utts
                     total_loss += loss.item() * num_utts
-                    total_acc += acc * num_utts
                 if batch_idx % log_interval == 0:
                     logging.debug(
                         'CV Batch {}/{} loss {:.8f} acc {:.8f} history loss {:.8f}'
                         .format(epoch, batch_idx, loss.item(), acc,
                                 total_loss / num_seen_utts))
-        return total_loss / num_seen_utts, total_acc / num_seen_utts
-
-    def test(self, model, data_loader, device, args):
-        return self.cv(model, data_loader, device, args)
+        return total_loss / num_seen_utts
