@@ -55,7 +55,7 @@ else
 fi
 
 if [ -d $dl_dir/$(basename "$resources" .tgz) ]; then
-  echo "Not extracting $(basename "$dataset" .tar.gz) as it is already there."
+  echo "Not extracting $(basename "$resources" .tar.gz) as it is already there."
 else
   echo "Extracting $resources..."
   tar -xvzf $src_path/$resources -C $dl_dir || exit 1;
