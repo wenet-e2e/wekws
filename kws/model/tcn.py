@@ -29,12 +29,16 @@ class CnnBlock(nn.Module):
         super().__init__()
         # The CNN used here is causal convolution
         self.padding = (kernel_size - 1) * dilation
-        self.cnn = nn.Conv1d(channel,
-                             channel,
-                             kernel_size,
-                             stride=1,
-                             dilation=dilation)
-        self.dropout = nn.Dropout(dropout)
+        self.cnn = nn.Sequential(
+            nn.Conv1d(channel,
+                      channel,
+                      kernel_size,
+                      stride=1,
+                      dilation=dilation),
+            nn.BatchNorm1d(channel),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+        )
 
     def forward(self, x: torch.Tensor, cache: Optional[torch.Tensor] = None):
         """
@@ -51,8 +55,6 @@ class CnnBlock(nn.Module):
         new_cache = y[:, :, -self.padding:]
 
         y = self.cnn(y)
-        y = F.relu(y)
-        y = self.dropout(y)
         y = y + x  # residual connection
         return y, new_cache
 
@@ -68,17 +70,20 @@ class DsCnnBlock(nn.Module):
         super().__init__()
         # The CNN used here is causal convolution
         self.padding = (kernel_size - 1) * dilation
-        self.depthwise_cnn = nn.Conv1d(channel,
-                                       channel,
-                                       kernel_size,
-                                       stride=1,
-                                       dilation=dilation,
-                                       groups=channel)
-        self.pointwise_cnn = nn.Conv1d(channel,
-                                       channel,
-                                       kernel_size=1,
-                                       stride=1)
-        self.dropout = nn.Dropout(dropout)
+        self.cnn = nn.Sequential(
+            nn.Conv1d(channel,
+                      channel,
+                      kernel_size,
+                      stride=1,
+                      dilation=dilation,
+                      groups=channel),
+            nn.BatchNorm1d(channel),
+            nn.ReLU(),
+            nn.Conv1d(channel, channel, kernel_size=1, stride=1),
+            nn.BatchNorm1d(channel),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+        )
 
     def forward(self, x: torch.Tensor, cache: Optional[torch.Tensor] = None):
         """
@@ -94,10 +99,7 @@ class DsCnnBlock(nn.Module):
         assert y.size(2) > self.padding
         new_cache = y[:, :, -self.padding:]
 
-        y = self.depthwise_cnn(y)
-        y = self.pointwise_cnn(y)
-        y = F.relu(y)
-        y = self.dropout(y)
+        y = self.cnn(y)
         y = y + x  # residual connection
         return y, new_cache
 
