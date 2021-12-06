@@ -196,7 +196,8 @@ def main():
         model = model.to(device)
 
     optimizer = optim.Adam(model.parameters(),
-                           lr=configs['optim_conf']['lr'])
+                           lr=configs['optim_conf']['lr'],
+                           weight_decay=configs['optim_conf']['weight_decay'])
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer,
         mode='min',

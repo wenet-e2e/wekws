@@ -42,7 +42,7 @@ model:
 
 optim: adam
 optim_conf:
-    lr: 0.0002
+    lr: 0.001
     weight_decay: 0.00005
 
 training_config:
