@@ -18,7 +18,7 @@ gpu_id=4
 checkpoint=
 dir=exp/mdtc
 
-num_average=1
+num_average=10
 score_checkpoint=$dir/avg_${num_average}.pt
 
 # your data dir
