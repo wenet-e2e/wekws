@@ -43,7 +43,7 @@ def get_args():
                         default=-1,
                         help='gpu id for this local rank, -1 for cpu')
     parser.add_argument('--model_dir', required=True, help='save model dir')
-    parser.add_argument('--seed', dest='seed', default=777, help='random seed')
+    parser.add_argument('--seed', type=int, default=777, help='random seed')
     parser.add_argument('--checkpoint', help='checkpoint model')
     parser.add_argument('--tensorboard_dir',
                         default='tensorboard',
