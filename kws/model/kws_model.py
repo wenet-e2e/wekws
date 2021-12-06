@@ -122,7 +122,6 @@ def init_model(configs):
     else:
         print('Unknown body type {}'.format(backbone_type))
         sys.exit(1)
-    
     if 'classifier' in configs:
         classifier_type = configs['classifier']['type']
         dropout = configs['classifier']['dropout']
