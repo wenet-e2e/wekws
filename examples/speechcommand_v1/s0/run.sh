@@ -6,7 +6,7 @@
 
 export CUDA_VISIBLE_DEVICES="0"
 
-stage=2
+stage=-1
 stop_stage=2
 num_keywords=11
 
