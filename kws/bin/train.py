@@ -221,8 +221,9 @@ def main():
         logging.info('Epoch {} TRAIN info lr {}'.format(epoch, lr))
         executor.train(model, optimizer, train_data_loader, device, writer,
                        training_config)
-        cv_loss = executor.cv(model, cv_data_loader, device, training_config)
-        logging.info('Epoch {} CV info cv_loss {}'.format(epoch, cv_loss))
+        cv_loss, cv_acc = executor.cv(model, cv_data_loader, device, training_config)
+        logging.info('Epoch {} CV info cv_loss {} cv_acc {}'
+                     .format(epoch, cv_loss, cv_acc))
 
         if args.rank == 0:
             save_model_path = os.path.join(model_dir, '{}.pt'.format(epoch))
@@ -232,6 +233,7 @@ def main():
                 'cv_loss': cv_loss,
             })
             writer.add_scalar('epoch/cv_loss', cv_loss, epoch)
+            writer.add_scalar('epoch/cv_acc', cv_acc, epoch)
             writer.add_scalar('epoch/lr', lr, epoch)
         final_epoch = epoch
         scheduler.step(cv_loss)
