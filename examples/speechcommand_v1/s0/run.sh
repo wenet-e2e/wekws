@@ -13,7 +13,7 @@ num_keywords=11
 config=conf/mdtc.yaml
 norm_mean=false
 norm_var=false
-gpu_id=4
+gpu_id=0
 
 checkpoint=
 dir=exp/mdtc
@@ -78,4 +78,31 @@ if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
     --min_duration 50 \
     $cmvn_opts \
     ${checkpoint:+--checkpoint $checkpoint}
+fi
+
+if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
+  # Do model average
+  python kws/bin/average_model.py \
+    --dst_model $score_checkpoint \
+    --src_path $dir  \
+    --num ${num_average} \
+    --val_best
+
+  # Testing
+  result_dir=$dir/test_$(basename $score_checkpoint)
+  mkdir -p $result_dir
+  python kws/bin/compute_accuracy.py --gpu 3 \
+    --config $dir/config.yaml \
+    --test_data data/test/data.list \
+    --batch_size 256 \
+    --num_workers 8 \
+    --checkpoint $score_checkpoint
+fi
+
+
+if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
+  python kws/bin/export_jit.py --config $dir/config.yaml \
+    --checkpoint $score_checkpoint \
+    --output_file $dir/final.zip \
+    --output_quant_file $dir/final.quant.zip
 fi

@@ -20,21 +20,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class CnnBlock(nn.Module):
+class Block(nn.Module):
     def __init__(self,
                  channel: int,
                  kernel_size: int,
                  dilation: int,
                  dropout: float = 0.1):
         super().__init__()
-        # The CNN used here is causal convolution
         self.padding = (kernel_size - 1) * dilation
-        self.cnn = nn.Conv1d(channel,
-                             channel,
-                             kernel_size,
-                             stride=1,
-                             dilation=dilation)
-        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x: torch.Tensor, cache: Optional[torch.Tensor] = None):
         """
@@ -43,6 +36,7 @@ class CnnBlock(nn.Module):
         Returns:
             torch.Tensor(B, D, T)
         """
+        # The CNN used here is causal convolution
         if cache is None:
             y = F.pad(x, (self.padding, 0), value=0.0)
         else:
@@ -50,14 +44,32 @@ class CnnBlock(nn.Module):
         assert y.size(2) > self.padding
         new_cache = y[:, :, -self.padding:]
 
+        # self.cnn is defined in the subclass of Block
         y = self.cnn(y)
-        y = F.relu(y)
-        y = self.dropout(y)
         y = y + x  # residual connection
         return y, new_cache
 
 
-class DsCnnBlock(nn.Module):
+class CnnBlock(Block):
+    def __init__(self,
+                 channel: int,
+                 kernel_size: int,
+                 dilation: int,
+                 dropout: float = 0.1):
+        super().__init__(channel, kernel_size, dilation, dropout)
+        self.cnn = nn.Sequential(
+            nn.Conv1d(channel,
+                      channel,
+                      kernel_size,
+                      stride=1,
+                      dilation=dilation),
+            nn.BatchNorm1d(channel),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+        )
+
+
+class DsCnnBlock(Block):
     """ Depthwise Separable Convolution
     """
     def __init__(self,
@@ -65,41 +77,21 @@ class DsCnnBlock(nn.Module):
                  kernel_size: int,
                  dilation: int,
                  dropout: float = 0.1):
-        super().__init__()
-        # The CNN used here is causal convolution
-        self.padding = (kernel_size - 1) * dilation
-        self.depthwise_cnn = nn.Conv1d(channel,
-                                       channel,
-                                       kernel_size,
-                                       stride=1,
-                                       dilation=dilation,
-                                       groups=channel)
-        self.pointwise_cnn = nn.Conv1d(channel,
-                                       channel,
-                                       kernel_size=1,
-                                       stride=1)
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, x: torch.Tensor, cache: Optional[torch.Tensor] = None):
-        """
-        Args:
-            x(torch.Tensor): Input tensor (B, D, T)
-        Returns:
-            torch.Tensor(B, D, T)
-        """
-        if cache is None:
-            y = F.pad(x, (self.padding, 0), value=0.0)
-        else:
-            y = torch.cat((cache, x), dim=2)
-        assert y.size(2) > self.padding
-        new_cache = y[:, :, -self.padding:]
-
-        y = self.depthwise_cnn(y)
-        y = self.pointwise_cnn(y)
-        y = F.relu(y)
-        y = self.dropout(y)
-        y = y + x  # residual connection
-        return y, new_cache
+        super().__init__(channel, kernel_size, dilation, dropout)
+        self.cnn = nn.Sequential(
+            nn.Conv1d(channel,
+                      channel,
+                      kernel_size,
+                      stride=1,
+                      dilation=dilation,
+                      groups=channel),
+            nn.BatchNorm1d(channel),
+            nn.ReLU(),
+            nn.Conv1d(channel, channel, kernel_size=1, stride=1),
+            nn.BatchNorm1d(channel),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+        )
 
 
 class TCN(nn.Module):

@@ -9,15 +9,15 @@ stage=0
 stop_stage=4
 num_keywords=2
 
-config=conf/mdtc_small.yaml
-norm_mean=false
-norm_var=false
+config=conf/ds_tcn.yaml
+norm_mean=true
+norm_var=true
 gpu_id=0
 
 checkpoint=
-dir=exp/mdtc_small
+dir=exp/ds_tcn
 
-num_average=10
+num_average=30
 score_checkpoint=$dir/avg_${num_average}.pt
 
 download_dir=./data/local # your data dir
@@ -82,6 +82,7 @@ if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
     --num_workers 8 \
     --num_keywords $num_keywords \
     --min_duration 50 \
+    --seed 666 \
     $cmvn_opts \
     ${checkpoint:+--checkpoint $checkpoint}
 fi
@@ -97,7 +98,7 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
   # Compute posterior score
   result_dir=$dir/test_$(basename $score_checkpoint)
   mkdir -p $result_dir
-  python kws/bin/score.py --gpu 1 \
+  python kws/bin/score.py --gpu $gpu_id \
     --config $dir/config.yaml \
     --test_data data/test/data.list \
     --batch_size 256 \
