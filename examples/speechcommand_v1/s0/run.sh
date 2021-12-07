@@ -13,7 +13,7 @@ num_keywords=11
 config=conf/mdtc.yaml
 norm_mean=false
 norm_var=false
-gpu_id=4
+gpu_id=0
 
 checkpoint=
 dir=exp/mdtc
