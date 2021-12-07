@@ -98,7 +98,7 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
   # Compute posterior score
   result_dir=$dir/test_$(basename $score_checkpoint)
   mkdir -p $result_dir
-  python kws/bin/score.py --gpu 0 \
+  python kws/bin/score.py --gpu $gpu_id \
     --config $dir/config.yaml \
     --test_data data/test/data.list \
     --batch_size 256 \
