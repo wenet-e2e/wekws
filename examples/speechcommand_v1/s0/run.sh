@@ -91,7 +91,7 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
   # Testing
   result_dir=$dir/test_$(basename $score_checkpoint)
   mkdir -p $result_dir
-  python kws/bin/test.py --gpu 3 \
+  python kws/bin/compute_accuracy.py --gpu 3 \
     --config $dir/config.yaml \
     --test_data data/test/data.list \
     --batch_size 256 \
