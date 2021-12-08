@@ -3,6 +3,7 @@
 # Copyright 2018-2020  Yiming Wang
 #           2018-2020  Daniel Povey
 #           2021       Binbin Zhang
+#                      Menglong Xu
 # Apache 2.0
 """ This script prepares the snips data into kaldi format.
 """
