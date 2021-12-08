@@ -1,0 +1,50 @@
+dataset_conf:
+    filter_conf:
+        max_length: 2048
+        min_length: 0
+    resample_conf:
+        resample_rate: 16000
+    speed_perturb: false
+    feature_extraction_conf:
+        feature_type: 'mfcc'
+        num_ceps: 80
+        num_mel_bins: 80
+        frame_shift: 10
+        frame_length: 25
+        dither: 1.0
+    feature_dither: 0.0
+    spec_aug: true
+    spec_aug_conf:
+        num_t_mask: 1
+        num_f_mask: 1
+        max_t: 20
+        max_f: 40
+    shuffle: true
+    shuffle_conf:
+        shuffle_size: 1500
+    batch_conf:
+        batch_size: 100
+
+model:
+    hidden_dim: 32
+    preprocessing:
+        type: none
+    backbone:
+        type: mdtc
+        num_stack: 3
+        stack_size: 4
+        kernel_size: 5
+        hidden_dim: 32
+        causal: True
+
+
+optim: adam
+optim_conf:
+    lr: 0.001
+    weight_decay: 0.00005
+
+training_config:
+    grad_clip: 5
+    max_epoch: 100
+    log_interval: 10
+    criterion: max_pooling
