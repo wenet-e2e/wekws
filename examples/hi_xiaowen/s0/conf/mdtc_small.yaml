@@ -35,8 +35,6 @@ model:
         stack_size: 4
         kernel_size: 5
         hidden_dim: 32
-    classifier:
-        type: linear
 
 optim: adam
 optim_conf:
