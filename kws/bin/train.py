@@ -38,36 +38,20 @@ def get_args():
     parser.add_argument('--config', required=True, help='config file')
     parser.add_argument('--train_data', required=True, help='train data file')
     parser.add_argument('--cv_data', required=True, help='cv data file')
-    parser.add_argument('--gpu',
-                        type=int,
-                        default=-1,
-                        help='gpu id for this local rank, -1 for cpu')
+    parser.add_argument('--gpus',
+                        default='-1',
+                        help='gpu lists, seperated with `,`, -1 for cpu')
     parser.add_argument('--model_dir', required=True, help='save model dir')
     parser.add_argument('--seed', type=int, default=777, help='random seed')
     parser.add_argument('--checkpoint', help='checkpoint model')
     parser.add_argument('--tensorboard_dir',
                         default='tensorboard',
                         help='tensorboard log dir')
-    parser.add_argument('--ddp.rank',
-                        dest='rank',
-                        default=0,
-                        type=int,
-                        help='global rank for distributed training')
-    parser.add_argument('--ddp.world_size',
-                        dest='world_size',
-                        default=-1,
-                        type=int,
-                        help='''number of total processes/gpus for
-                        distributed training''')
     parser.add_argument('--ddp.dist_backend',
                         dest='dist_backend',
                         default='nccl',
                         choices=['nccl', 'gloo'],
                         help='distributed backend')
-    parser.add_argument('--ddp.init_method',
-                        dest='init_method',
-                        default=None,
-                        help='ddp init method')
     parser.add_argument('--num_workers',
                         default=0,
                         type=int,
@@ -102,21 +86,19 @@ def main():
     args = get_args()
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(levelname)s %(message)s')
-    os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
-
     # Set random seed
     set_mannul_seed(args.seed)
     print(args)
     with open(args.config, 'r') as fin:
         configs = yaml.load(fin, Loader=yaml.FullLoader)
 
-    distributed = args.world_size > 1
-    if distributed:
-        logging.info('training on multiple gpus, this gpu {}'.format(args.gpu))
-        dist.init_process_group(args.dist_backend,
-                                init_method=args.init_method,
-                                world_size=args.world_size,
-                                rank=args.rank)
+    rank = int(os.environ['LOCAL_RANK'])
+    world_size = int(os.environ['WORLD_SIZE'])
+    gpu = int(args.gpus.split(',')[rank])
+    os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu)
+    if world_size > 1:
+        logging.info('training on multiple gpus, this gpu {}'.format(gpu))
+        dist.init_process_group(backend=args.dist_backend)
 
     train_conf = configs['dataset_conf']
     cv_conf = copy.deepcopy(train_conf)
@@ -149,7 +131,7 @@ def main():
         configs['model']['cmvn'] = {}
         configs['model']['cmvn']['norm_var'] = args.norm_var
         configs['model']['cmvn']['cmvn_file'] = args.cmvn_file
-    if args.rank == 0:
+    if rank == 0:
         saved_config_path = os.path.join(args.model_dir, 'config.yaml')
         with open(saved_config_path, 'w') as fout:
             data = yaml.dump(configs)
@@ -164,7 +146,7 @@ def main():
     # !!!IMPORTANT!!!
     # Try to export the model by script, if fails, we should refine
     # the code to satisfy the script export requirements
-    if args.rank == 0:
+    if rank == 0:
         script_model = torch.jit.script(model)
         script_model.save(os.path.join(args.model_dir, 'init.zip'))
     executor = Executor()
@@ -178,20 +160,19 @@ def main():
 
     model_dir = args.model_dir
     writer = None
-    if args.rank == 0:
+    if rank == 0:
         os.makedirs(model_dir, exist_ok=True)
         exp_id = os.path.basename(model_dir)
         writer = SummaryWriter(os.path.join(args.tensorboard_dir, exp_id))
 
-    if distributed:
+    if world_size > 1:
         assert (torch.cuda.is_available())
         # cuda model is required for nn.parallel.DistributedDataParallel
         model.cuda()
-        model = torch.nn.parallel.DistributedDataParallel(
-            model, find_unused_parameters=True)
+        model = torch.nn.parallel.DistributedDataParallel(model)
         device = torch.device("cuda")
     else:
-        use_cuda = args.gpu >= 0 and torch.cuda.is_available()
+        use_cuda = gpu >= 0 and torch.cuda.is_available()
         device = torch.device('cuda' if use_cuda else 'cpu')
         model = model.to(device)
 
@@ -209,7 +190,7 @@ def main():
     training_config['min_duration'] = args.min_duration
     num_epochs = training_config.get('max_epoch', 100)
     final_epoch = None
-    if start_epoch == 0 and args.rank == 0:
+    if start_epoch == 0 and rank == 0:
         save_model_path = os.path.join(model_dir, 'init.pt')
         save_checkpoint(model, save_model_path)
 
@@ -221,11 +202,12 @@ def main():
         logging.info('Epoch {} TRAIN info lr {}'.format(epoch, lr))
         executor.train(model, optimizer, train_data_loader, device, writer,
                        training_config)
-        cv_loss, cv_acc = executor.cv(model, cv_data_loader, device, training_config)
-        logging.info('Epoch {} CV info cv_loss {} cv_acc {}'
-                     .format(epoch, cv_loss, cv_acc))
+        cv_loss, cv_acc = executor.cv(model, cv_data_loader, device,
+                                      training_config)
+        logging.info('Epoch {} CV info cv_loss {} cv_acc {}'.format(
+            epoch, cv_loss, cv_acc))
 
-        if args.rank == 0:
+        if rank == 0:
             save_model_path = os.path.join(model_dir, '{}.pt'.format(epoch))
             save_checkpoint(model, save_model_path, {
                 'epoch': epoch,
@@ -238,7 +220,7 @@ def main():
         final_epoch = epoch
         scheduler.step(cv_loss)
 
-    if final_epoch is not None and args.rank == 0:
+    if final_epoch is not None and rank == 0:
         final_model_path = os.path.join(model_dir, 'final.pt')
         os.symlink('{}.pt'.format(final_epoch), final_model_path)
         writer.close()

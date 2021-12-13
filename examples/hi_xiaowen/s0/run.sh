@@ -1,9 +1,7 @@
 #!/bin/bash
-# Copyright 2021  Binbin Zhang
+# Copyright 2021  Binbin Zhang(binbzha@qq.com)
 
 . ./path.sh
-
-export CUDA_VISIBLE_DEVICES="0"
 
 stage=0
 stop_stage=4
@@ -12,7 +10,7 @@ num_keywords=2
 config=conf/ds_tcn.yaml
 norm_mean=true
 norm_var=true
-gpu_id=0
+gpus="0,1"
 
 checkpoint=
 dir=exp/ds_tcn
@@ -24,7 +22,6 @@ download_dir=./data/local # your data dir
 
 . tools/parse_options.sh || exit 1;
 
-set -euo pipefail
 
 if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
   echo "Download and extracte all datasets"
@@ -74,42 +71,37 @@ if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
   cmvn_opts=
   $norm_mean && cmvn_opts="--cmvn_file data/train/global_cmvn"
   $norm_var && cmvn_opts="$cmvn_opts --norm_var"
-  python kws/bin/train.py --gpu $gpu_id \
-    --config $config \
-    --train_data data/train/data.list \
-    --cv_data data/dev/data.list \
-    --model_dir $dir \
-    --num_workers 8 \
-    --num_keywords $num_keywords \
-    --min_duration 50 \
-    --seed 666 \
-    $cmvn_opts \
-    ${checkpoint:+--checkpoint $checkpoint}
+  num_gpus=$(echo $gpus | awk -F ',' '{print NF}')
+  torchrun --standalone --nnodes=1 --nproc_per_node=$num_gpus \
+    kws/bin/train.py --gpus $gpus \
+      --config $config \
+      --train_data data/train/data.list \
+      --cv_data data/dev/data.list \
+      --model_dir $dir \
+      --num_workers 8 \
+      --num_keywords $num_keywords \
+      --min_duration 50 \
+      --seed 666 \
+      $cmvn_opts \
+      ${checkpoint:+--checkpoint $checkpoint}
 fi
 
 if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
-  # Do model average
+  echo "Do model average, Compute FRR/FAR ..."
   python kws/bin/average_model.py \
     --dst_model $score_checkpoint \
     --src_path $dir  \
     --num ${num_average} \
     --val_best
-
-  # Compute posterior score
   result_dir=$dir/test_$(basename $score_checkpoint)
   mkdir -p $result_dir
-  python kws/bin/score.py --gpu $gpu_id \
+  python kws/bin/score.py \
     --config $dir/config.yaml \
     --test_data data/test/data.list \
     --batch_size 256 \
     --checkpoint $score_checkpoint \
     --score_file $result_dir/score.txt \
     --num_workers 8
-fi
-
-if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
-  # Compute detection error tradeoff
-  result_dir=$dir/test_$(basename $score_checkpoint)
   for keyword in 0 1; do
     python kws/bin/compute_det.py \
       --keyword $keyword \
@@ -120,7 +112,7 @@ if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
 fi
 
 
-if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
+if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
   python kws/bin/export_jit.py --config $dir/config.yaml \
     --checkpoint $score_checkpoint \
     --output_file $dir/final.zip \
