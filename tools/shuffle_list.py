@@ -17,8 +17,6 @@ import argparse
 import random
 import sys
 
-import argparse
-
 parser = argparse.ArgumentParser(description='shuffle input file by line')
 parser.add_argument('--seed', default=None, type=int, help='random seed')
 parser.add_argument('--input', help='input file')
