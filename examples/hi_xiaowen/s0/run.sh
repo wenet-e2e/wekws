@@ -113,9 +113,34 @@ fi
 
 
 if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
-  python kws/bin/export_jit.py --config $dir/config.yaml \
+  echo "Static quantization, compute FRR/FAR..."
+  # Apply static quantization
+  quantize_score_checkpoint=$(basename $score_checkpoint | sed -e 's:.pt$:quant.zip:g')
+  cat data/train/data.list | python tools/shuffle_list.py --seed 777 | \
+      head -n 10000 > $dir/calibration.list
+  python kws/bin/static_quantize.py \
+    --config $dir/config.yaml \
+    --test_data $dir/calibration.list \
     --checkpoint $score_checkpoint \
-    --output_file $dir/final.zip \
-    --output_quant_file $dir/final.quant.zip
+    --num_workers 8 \
+    --script_model $dir/$quantize_score_checkpoint
+
+  result_dir=$dir/test_$(basename $quantize_score_checkpoint)
+  mkdir -p $result_dir
+  python kws/bin/score.py \
+    --config $dir/config.yaml \
+    --test_data data/test/data.list \
+    --batch_size 256 \
+    --jit_model \
+    --checkpoint $dir/$quantize_score_checkpoint \
+    --score_file $result_dir/score.txt \
+    --num_workers 8
+  for keyword in 0 1; do
+    python kws/bin/compute_det.py \
+      --keyword $keyword \
+      --test_data data/test/data.list \
+      --score_file $result_dir/score.txt \
+      --stats_file $result_dir/stats.${keyword}.txt
+  done
 fi
 

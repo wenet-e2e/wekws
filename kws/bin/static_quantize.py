@@ -27,22 +27,13 @@ from torch.utils.data import DataLoader
 from kws.dataset.dataset import Dataset
 from kws.model.kws_model import init_model
 from kws.utils.checkpoint import load_checkpoint
-from kws.utils.mask import padding_mask
 
 
 def get_args():
     parser = argparse.ArgumentParser(description='recognize with your model')
     parser.add_argument('--config', required=True, help='config file')
     parser.add_argument('--test_data', required=True, help='test data file')
-    parser.add_argument('--gpu',
-                        type=int,
-                        default=-1,
-                        help='gpu id for this rank, -1 for cpu')
     parser.add_argument('--checkpoint', required=True, help='checkpoint model')
-    parser.add_argument('--batch_size',
-                        default=16,
-                        type=int,
-                        help='batch size for inference')
     parser.add_argument('--num_workers',
                         default=0,
                         type=int,
@@ -55,14 +46,11 @@ def get_args():
                         default=100,
                         type=int,
                         help='prefetch number')
-    parser.add_argument('--score_file',
+    parser.add_argument('--script_model',
                         required=True,
-                        help='output score file')
-    parser.add_argument('--jit_model',
-                        action='store_true',
-                        default=False,
-                        help='Use pinned memory buffers used for reading')
+                        help='output script model')
     args = parser.parse_args()
+    print(args)
     return args
 
 
@@ -70,7 +58,7 @@ def main():
     args = get_args()
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(levelname)s %(message)s')
-    os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
+    os.environ['CUDA_VISIBLE_DEVICES'] = str("-1")
 
     with open(args.config, 'r') as fin:
         configs = yaml.load(fin, Loader=yaml.FullLoader)
@@ -82,7 +70,7 @@ def main():
     test_conf['spec_aug'] = False
     test_conf['shuffle'] = False
     test_conf['feature_extraction_conf']['dither'] = 0.0
-    test_conf['batch_conf']['batch_size'] = args.batch_size
+    test_conf['batch_conf']['batch_size'] = 1
 
     test_dataset = Dataset(args.test_data, test_conf)
     test_data_loader = DataLoader(test_dataset,
@@ -91,37 +79,55 @@ def main():
                                   num_workers=args.num_workers,
                                   prefetch_factor=args.prefetch)
 
-    if args.jit_model:
-        model = torch.jit.load(args.checkpoint)
-        # For script model, only cpu is supported.
-        device = torch.device('cpu')
-    else:
-        # Init asr model from configs
-        model = init_model(configs['model'])
-        load_checkpoint(model, args.checkpoint)
-        use_cuda = args.gpu >= 0 and torch.cuda.is_available()
-        device = torch.device('cuda' if use_cuda else 'cpu')
-    model = model.to(device)
+    # Init asr model from configs
+    model_fp32 = init_model(configs['model'])
+    load_checkpoint(model_fp32, args.checkpoint)
+    # model must be set to eval mode for static quantization logic to work
+    model_fp32.eval()
 
-    model.eval()
-    with torch.no_grad(), open(args.score_file, 'w', encoding='utf8') as fout:
+    # Fuse the activations to preceding layers, where applicable.
+    # This needs to be done manually depending on the model architecture.
+    # Common fusions include `conv + relu` and `conv + batchnorm + relu`
+    print('================ Float 32 ======================')
+    print(model_fp32)
+    print('================ Float 32(fused) ===============')
+    model_fp32.fuse_modules()
+    print(model_fp32)
+
+    # attach a global qconfig, which contains information about what kind
+    # of observers to attach. Use 'fbgemm' for server inference and
+    # 'qnnpack' for mobile inference. Other quantization configurations such
+    # as selecting symmetric or assymetric quantization and MinMax or L2Norm
+    # calibration techniques can be specified here.
+    model_fp32.qconfig = torch.quantization.get_default_qconfig('qnnpack')
+
+    # Prepare the model for static quantization. This inserts observers in
+    # the model that will observe activation tensors during calibration.
+    model_fp32_prepared = torch.quantization.prepare(model_fp32)
+
+    # calibrate the prepared model to determine quantization parameters for
+    # activations in a real world setting, the calibration would be done with
+    # a representative dataset
+    with torch.no_grad():
         for batch_idx, batch in enumerate(test_data_loader):
             keys, feats, target, lengths = batch
-            feats = feats.to(device)
-            lengths = lengths.to(device)
-            mask = padding_mask(lengths).unsqueeze(2)
-            logits = torch.sigmoid(model(feats))
-            logits = logits.masked_fill(mask, 0.0)
-            max_logits, _ = logits.max(dim=1)
-            max_logits = max_logits.cpu()
-            for i in range(len(keys)):
-                key = keys[i]
-                score = max_logits[i]
-                score = ' '.join([str(x) for x in score.tolist()])
-                fout.write('{} {}\n'.format(key, score))
-            if batch_idx % 10 == 0:
-                print('Progress batch {}'.format(batch_idx))
+            logits = model_fp32_prepared(feats)
+            if batch_idx % 100 == 0:
+                print('Progress utts {}'.format(batch_idx))
                 sys.stdout.flush()
+
+    # Convert the observed model to a quantized model. This does several things:
+    # quantizes the weights, computes and stores the scale and bias value to be
+    # used with each activation tensor, and replaces key operators with
+    # quantized implementations.
+    print('=================== int8  ======================')
+    model_int8 = torch.quantization.convert(model_fp32_prepared)
+    print(model_int8)
+
+    print('================ int8(script) ==================')
+    script_model = torch.jit.script(model_int8)
+    script_model.save(args.script_model)
+    print(script_model)
 
 
 if __name__ == '__main__':
