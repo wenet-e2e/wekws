@@ -23,6 +23,7 @@ class SubsamplingBase(torch.nn.Module):
         super().__init__()
         self.subsampling_rate = 1
 
+
 class NoSubsampling(SubsamplingBase):
     """No subsampling in accordance to the 'none' preprocessing
     """
@@ -32,6 +33,7 @@ class NoSubsampling(SubsamplingBase):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return x
 
+
 class LinearSubsampling1(SubsamplingBase):
     """Linear transform the input without subsampling
     """
@@ -39,14 +41,21 @@ class LinearSubsampling1(SubsamplingBase):
         super().__init__()
         self.out = torch.nn.Sequential(
             torch.nn.Linear(idim, odim),
-            # torch.nn.BatchNorm1d(odim),
             torch.nn.ReLU(),
         )
         self.subsampling_rate = 1
+        self.quant = torch.quantization.QuantStub()
+        self.dequant = torch.quantization.DeQuantStub()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.quant(x)
         x = self.out(x)
+        x = self.dequant(x)
         return x
+
+    def fuse_modules(self):
+        torch.quantization.fuse_modules(self, [['out.0', 'out.1']],
+                                        inplace=True)
 
 
 class Conv1dSubsampling1(SubsamplingBase):

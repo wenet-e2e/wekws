@@ -19,7 +19,7 @@ import torch
 import torch.nn as nn
 
 from kws.model.cmvn import GlobalCMVN
-from kws.model.classifier import GlobalClassifier, LastClassifier
+from kws.model.classifier import GlobalClassifier, LastClassifier, LinearClassifier
 from kws.model.subsampling import LinearSubsampling1, Conv1dSubsampling1, NoSubsampling
 from kws.model.tcn import TCN, CnnBlock, DsCnnBlock
 from kws.model.mdtc import MDTC
@@ -59,6 +59,10 @@ class KWSModel(torch.nn.Module):
         x, _ = self.backbone(x)
         x = self.classifier(x)
         return x
+
+    def fuse_modules(self):
+        self.preprocessing.fuse_modules()
+        self.backbone.fuse_modules()
 
 
 def init_model(configs):
@@ -143,7 +147,7 @@ def init_model(configs):
             print('Unknown classifier type {}'.format(classifier_type))
             sys.exit(1)
     else:
-        classifier = torch.nn.Linear(hidden_dim, output_dim)
+        classifier = LinearClassifier(hidden_dim, output_dim)
 
     kws_model = KWSModel(input_dim, output_dim, hidden_dim, global_cmvn,
                          preprocessing, backbone, classifier)

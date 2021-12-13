@@ -45,3 +45,17 @@ class ElementClassifier(nn.Module):
 
     def forward(self, x: torch.Tensor):
         return self.classifier(x)
+
+class LinearClassifier(nn.Module):
+    """ Wrapper of Linear """
+    def __init__(self, input_dim, output_dim):
+        super().__init__()
+        self.linear = torch.nn.Linear(input_dim, output_dim)
+        self.quant = torch.quantization.QuantStub()
+        self.dequant = torch.quantization.DeQuantStub()
+
+    def forward(self, x: torch.Tensor):
+        x = self.quant(x)
+        x = self.linear(x)
+        x = self.dequant(x)
+        return x
