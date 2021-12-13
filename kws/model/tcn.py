@@ -28,6 +28,8 @@ class Block(nn.Module):
                  dropout: float = 0.1):
         super().__init__()
         self.padding = (kernel_size - 1) * dilation
+        self.quant = torch.quantization.QuantStub()
+        self.dequant = torch.quantization.DeQuantStub()
 
     def forward(self, x: torch.Tensor, cache: Optional[torch.Tensor] = None):
         """
@@ -44,10 +46,15 @@ class Block(nn.Module):
         assert y.size(2) > self.padding
         new_cache = y[:, :, -self.padding:]
 
+        y = self.quant(y)
         # self.cnn is defined in the subclass of Block
         y = self.cnn(y)
+        y = self.dequant(y)
         y = y + x  # residual connection
         return y, new_cache
+
+    def fuse_modules(self):
+        self.cnn.fuse_modules()
 
 
 class CnnBlock(Block):
@@ -67,6 +74,10 @@ class CnnBlock(Block):
             nn.ReLU(),
             nn.Dropout(dropout),
         )
+
+    def fuse_modules(self):
+        torch.quantization.fuse_modules(self, [['cnn.0', 'cnn.1', 'cnn.2']],
+                                        inplace=True)
 
 
 class DsCnnBlock(Block):
@@ -92,6 +103,11 @@ class DsCnnBlock(Block):
             nn.ReLU(),
             nn.Dropout(dropout),
         )
+
+    def fuse_modules(self):
+        torch.quantization.fuse_modules(
+            self, [['cnn.0', 'cnn.1', 'cnn.2'], ['cnn.3', 'cnn.4', 'cnn.5']],
+            inplace=True)
 
 
 class TCN(nn.Module):
@@ -128,6 +144,10 @@ class TCN(nn.Module):
         x = x.transpose(1, 2)  # (B, T, D)
         new_cache = torch.cat(out_caches, dim=2)
         return x, new_cache
+
+    def fuse_modules(self):
+        for m in self.network:
+            m.fuse_modules()
 
 
 if __name__ == '__main__':
