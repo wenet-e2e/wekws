@@ -37,6 +37,7 @@ model:
 optim: adam
 optim_conf:
     lr: 0.001
+    weight_decay: 0.0001
 
 training_config:
     grad_clip: 5
