@@ -42,7 +42,9 @@ else:
 
 try:
     fout.writelines(lines)
-except:
+except Exception:
     pass
-if args.input is not None: fin.close()
-if args.output is not None: fout.close()
+if args.input is not None:
+    fin.close()
+if args.output is not None:
+    fout.close()
