@@ -115,7 +115,7 @@ fi
 if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
   echo "Static quantization, compute FRR/FAR..."
   # Apply static quantization
-  quantize_score_checkpoint=$(basename $score_checkpoint | sed -e 's:.pt$:quant.zip:g')
+  quantize_score_checkpoint=$(basename $score_checkpoint | sed -e 's:.pt$:.quant.zip:g')
   cat data/train/data.list | python tools/shuffle_list.py --seed 777 | \
       head -n 10000 > $dir/calibration.list
   python kws/bin/static_quantize.py \
