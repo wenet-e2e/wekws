@@ -74,8 +74,8 @@ Please scan the QR code on the right to join the chat group.
   ([github](https://github.com/PeterMS123/KWS-DS-CNN-for-embedded),
    [paper](https://asmp-eurasipjournals.springeropen.com/track/pdf/10.1186/s13636-020-00176-2.pdf))
 * Hello Edge: Keyword Spotting on Microcontrollers
-  ([github](https://arxiv.org/pdf/1711.07128.pdf),
-   [paper](https://github.com/ARM-software/ML-KWS-for-MCU))
+  ([github](https://github.com/ARM-software/ML-KWS-for-MCU),
+   [paper](https://arxiv.org/pdf/1711.07128.pdf))
 * An Empirical Evaluation of Generic Convolutional and Recurrent Networks for Sequence Modeling
   ([github](http://github.com/locuslab/TCN),
    [paper](https://arxiv.org/pdf/1803.01271.pdf))
