@@ -24,7 +24,7 @@ dataset_conf:
         batch_size: 256
 
 model:
-    hidden_dim: 64
+    hidden_dim: 256
     preprocessing:
         type: linear
     backbone:
