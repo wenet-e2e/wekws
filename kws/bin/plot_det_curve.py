@@ -46,7 +46,7 @@ def plot_det_curve(keywords, stats_dir, figure_file):
     plt.ylim([0, 0.35])
     plt.xticks([0, 1, 2, 3, 4, 5], ['0', '1', '2', '3', '4', '5'])
     plt.yticks([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35],
-        ['0', '5', '10', '15', '20', '25', '30', '35'])
+               ['0', '5', '10', '15', '20', '25', '30', '35'])
     plt.xlabel('False Alarm Per Hour')
     plt.ylabel('False Rejection Rate (\\%)')
     plt.grid(linestyle='--')
@@ -56,10 +56,15 @@ def plot_det_curve(keywords, stats_dir, figure_file):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='plot det curve')
-    parser.add_argument('--keywords', required=True, 
+    parser.add_argument(
+        '--keywords',
+        required=True,
         help='keywords, must in the same order as in "dict/words.txt" separated by ", "')
     parser.add_argument('--stats_dir', required=True, help='dir of stats files')
-    parser.add_argument('--figure_file', required=True, help='path to save det curve')
+    parser.add_argument(
+        '--figure_file',
+        required=True,
+        help='path to save det curve')
 
     args = parser.parse_args()
 
