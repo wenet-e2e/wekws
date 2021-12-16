@@ -4,7 +4,7 @@
 
 . ./path.sh
 
-stage=3
+stage=0
 stop_stage=4
 num_keywords=1
 
@@ -14,7 +14,7 @@ norm_var=true
 gpus="0"
 
 checkpoint=
-dir=exp/ds_tcn_specargument
+dir=exp/ds_tcn
 
 num_average=30
 score_checkpoint=$dir/avg_${num_average}.pt
