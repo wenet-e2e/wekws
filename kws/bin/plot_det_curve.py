@@ -59,7 +59,9 @@ if __name__ == '__main__':
     parser.add_argument(
         '--keywords',
         required=True,
-        help='keywords, must in the same order as in "dict/words.txt" separated by ", "')
+        help=('keywords, must in the same order as in "dict/words.txt", ' + 
+              'separated by ", "')
+    )
     parser.add_argument('--stats_dir', required=True, help='dir of stats files')
     parser.add_argument(
         '--figure_file',
