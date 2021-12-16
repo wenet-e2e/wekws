@@ -74,25 +74,25 @@ if __name__ == '__main__':
         help='path to save det curve')
     parser.add_argument(
         '--xlim',
-        default='5',
+        type=int,
+        default=5,
         help='xlim：range of x-axis, x is false alarm per hour')
-    parser.add_argument('--x_step', default='1', help='step on x-axis')
+    parser.add_argument('--x_step', type=int, default=1, help='step on x-axis')
     parser.add_argument(
         '--ylim',
-        default='35',
+        type=int,
+        default=35,
         help='ylim：range of y-axis, y is false rejection rate')
-    parser.add_argument('--y_step', default='5', help='step on y-axis')
+    parser.add_argument('--y_step', type=int, default=5, help='step on y-axis')
 
     args = parser.parse_args()
 
     keywords = args.keywords.strip().split(', ')
-    xlim, x_step, ylim, y_step = map(
-        int, [args.xlim, args.x_step, args.ylim, args.y_step])
     plot_det_curve(
         keywords,
         args.stats_dir,
         args.figure_file,
-        xlim,
-        x_step,
-        ylim,
-        y_step)
+        args.xlim,
+        args.x_step,
+        args.ylim,
+        args.y_step)
