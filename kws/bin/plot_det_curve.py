@@ -72,10 +72,10 @@ if __name__ == '__main__':
         '--figure_file',
         required=True,
         help='path to save det curve')
-    parser.add_argument('--xlim', required=True, help='range of X-axis')
-    parser.add_argument('--x_step', required=True, help='step of X-axis')
-    parser.add_argument('--ylim', required=True, help='range of Y-axis')
-    parser.add_argument('--y_step', required=True, help='step of Y-axis')
+    parser.add_argument('--xlim', required=False, default='5', help='range of X-axis')
+    parser.add_argument('--x_step', required=False, default='1', help='step of X-axis')
+    parser.add_argument('--ylim', required=False, default='35', help='range of Y-axis')
+    parser.add_argument('--y_step', required=False, default='5', help='step of Y-axis')
 
     args = parser.parse_args()
 
