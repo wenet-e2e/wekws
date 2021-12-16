@@ -25,16 +25,22 @@ def load_stats_file(stats_file):
         for line in fin:
             arr = line.strip().split()
             threshold, fa_per_hour, frr = arr
-            values.append([float(fa_per_hour), float(frr)])
+            values.append([float(fa_per_hour), float(frr) * 100])
     values.reverse()
     return np.array(values)
 
 
-def plot_det_curve(keywords, stats_dir, figure_file):
+def plot_det_curve(
+        keywords,
+        stats_dir,
+        figure_file,
+        xlim,
+        x_step,
+        ylim,
+        y_step):
     plt.figure(dpi=200)
     plt.rcParams['xtick.direction'] = 'in'
     plt.rcParams['ytick.direction'] = 'in'
-    plt.rcParams['text.usetex'] = True
     plt.rcParams['font.size'] = 12
 
     for index, keyword in enumerate(keywords):
@@ -42,11 +48,10 @@ def plot_det_curve(keywords, stats_dir, figure_file):
         values = load_stats_file(stats_file)
         plt.plot(values[:, 0], values[:, 1], label=keyword)
 
-    plt.xlim([0, 5])
-    plt.ylim([0, 0.35])
-    plt.xticks([0, 1, 2, 3, 4, 5], ['0', '1', '2', '3', '4', '5'])
-    plt.yticks([0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35],
-               ['0', '5', '10', '15', '20', '25', '30', '35'])
+    plt.xlim([0, xlim])
+    plt.ylim([0, ylim])
+    plt.xticks(range(0, xlim + x_step, x_step))
+    plt.yticks(range(0, ylim + y_step, y_step))
     plt.xlabel('False Alarm Per Hour')
     plt.ylabel('False Rejection Rate (\\%)')
     plt.grid(linestyle='--')
@@ -67,8 +72,21 @@ if __name__ == '__main__':
         '--figure_file',
         required=True,
         help='path to save det curve')
+    parser.add_argument('--xlim', required=True, help='range of X-axis')
+    parser.add_argument('--x_step', required=True, help='step of X-axis')
+    parser.add_argument('--ylim', required=True, help='range of Y-axis')
+    parser.add_argument('--y_step', required=True, help='step of Y-axis')
 
     args = parser.parse_args()
 
     keywords = args.keywords.strip().split(', ')
-    plot_det_curve(keywords, args.stats_dir, args.figure_file)
+    xlim, x_step, ylim, y_step = map(
+        int, [args.xlim, args.x_step, args.ylim, args.y_step])
+    plot_det_curve(
+        keywords,
+        args.stats_dir,
+        args.figure_file,
+        xlim,
+        x_step,
+        ylim,
+        y_step)

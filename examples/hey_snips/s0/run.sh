@@ -4,7 +4,7 @@
 
 . ./path.sh
 
-stage=0
+stage=3
 stop_stage=4
 num_keywords=1
 
@@ -14,7 +14,7 @@ norm_var=true
 gpus="0"
 
 checkpoint=
-dir=exp/ds_tcn
+dir=exp/ds_tcn_specargument
 
 num_average=30
 score_checkpoint=$dir/avg_${num_average}.pt
@@ -109,7 +109,11 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
   python kws/bin/plot_det_curve.py \
     --keywords 'Hey_Snips' \
     --stats_dir $result_dir \
-    --figure_file $result_dir/det.png
+    --figure_file $result_dir/det.png \
+    --xlim 10 \
+    --x_step 2 \
+    --ylim 10 \
+    --y_step 2
 fi
 
 
