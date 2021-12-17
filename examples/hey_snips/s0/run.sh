@@ -107,7 +107,7 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
       --stats_file $result_dir/stats.${keyword}.txt
   done
   python kws/bin/plot_det_curve.py \
-    --keywords 'Hey_Snips' \
+    --keywords_dict dict/words.txt \
     --stats_dir $result_dir \
     --figure_file $result_dir/det.png \
     --xlim 10 \

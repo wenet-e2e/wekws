@@ -62,11 +62,9 @@ def plot_det_curve(
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='plot det curve')
     parser.add_argument(
-        '--keywords',
+        '--keywords_dict',
         required=True,
-        help=('keywords, must in the same order as in "dict/words.txt", ' +
-              'separated by ", "')
-    )
+        help='path to the dictionary of keywords')
     parser.add_argument('--stats_dir', required=True, help='dir of stats files')
     parser.add_argument(
         '--figure_file',
@@ -87,7 +85,13 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    keywords = args.keywords.strip().split(', ')
+    keywords = []
+    with open(args.keywords_dict, 'r', encoding='utf8') as fin:
+        for line in fin:
+            keyword, index = line.strip().split()
+            if int(index) > -1:
+                keywords.append(keyword)
+
     plot_det_curve(
         keywords,
         args.stats_dir,
