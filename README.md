@@ -60,7 +60,7 @@ For Chinese users, you can scan the QR code on the left to follow our offical ac
 We also created a WeChat group for better discussion and quicker response.
 Please scan the QR code on the right to join the chat group.
 
-| <img src="https://github.com/wenet-e2e/wenet-contributors/blob/main/wenet_official.jpeg" width="250px"> | <img src="https://github.com/wenet-e2e/wenet-contributors/blob/main/wekws/wechat_group.jpg" width="250px"> |
+| <img src="https://github.com/wenet-e2e/wenet-contributors/blob/main/wenet_official.jpeg" width="250px"> | <img src="https://github.com/wenet-e2e/wenet-contributors/blob/main/wekws/menglong.jpg" width="250px"> |
 | ---- | ---- |
 
 ## Reference
