@@ -28,10 +28,7 @@ def get_args():
     parser = argparse.ArgumentParser(description='export your script model')
     parser.add_argument('--config', required=True, help='config file')
     parser.add_argument('--checkpoint', required=True, help='checkpoint model')
-    parser.add_argument('--output_file', required=True, help='output file')
-    parser.add_argument('--output_quant_file',
-                        default=None,
-                        help='output quantized model file')
+    parser.add_argument('--jit_model', required=True, help='output jit model')
     args = parser.parse_args()
     return args
 
@@ -50,18 +47,8 @@ def main():
     # Export jit torch script model
 
     script_model = torch.jit.script(model)
-    script_model.save(args.output_file)
-    print('Export model successfully, see {}'.format(args.output_file))
-
-    # Export quantized jit torch script model
-    if args.output_quant_file:
-        quantized_model = torch.quantization.quantize_dynamic(
-            model, {torch.nn.Linear}, dtype=torch.qint8)
-        print(quantized_model)
-        script_quant_model = torch.jit.script(quantized_model)
-        script_quant_model.save(args.output_quant_file)
-        print('Export quantized model successfully, '
-              'see {}'.format(args.output_quant_file))
+    script_model.save(args.jit_model)
+    print('Export model successfully, see {}'.format(args.jit_model))
 
 
 if __name__ == '__main__':
