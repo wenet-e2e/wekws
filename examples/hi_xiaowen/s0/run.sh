@@ -3,22 +3,19 @@
 
 . ./path.sh
 
-stage=0
-stop_stage=4
+stage=3
+stop_stage=3
 num_keywords=2
 
-config=conf/ds_tcn.yaml
 norm_mean=true
 norm_var=true
 gpus="0,1"
 
-checkpoint=
-dir=exp/ds_tcn
 
 num_average=30
+checkpoint=$dir/avg_${num_average}.pt
 score_checkpoint=$dir/avg_${num_average}.pt
 
-download_dir=./data/local # your data dir
 
 . tools/parse_options.sh || exit 1;
 
@@ -95,19 +92,21 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     --val_best
   result_dir=$dir/test_$(basename $score_checkpoint)
   mkdir -p $result_dir
-  python kws/bin/score.py \
+  python kws/bin/score_longwav.py \
     --config $dir/config.yaml \
-    --test_data data/test/data.list \
-    --batch_size 256 \
+    --test_data data/test/test_data.list \
+    --batch_size 5 \
     --checkpoint $score_checkpoint \
-    --score_file $result_dir/score.txt \
+    --score_file_dir $result_dir  \
+    --num_keywords $num_keywords  \
     --num_workers 8
+
   for keyword in 0 1; do
-    python kws/bin/compute_det.py \
+    python kws/bin/compute_det_longwav.py \
       --keyword $keyword \
-      --test_data data/test/data.list \
-      --score_file $result_dir/score.txt \
-      --stats_file $result_dir/stats.${keyword}.txt
+      --test_data data/test/test_data.list \
+      --score_file $result_dir/score_longwav.${keyword}.txt \
+      --stats_file $result_dir/stats_longwav.${keyword}.txt
   done
 fi
 
