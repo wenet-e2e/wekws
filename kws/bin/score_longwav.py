@@ -57,7 +57,7 @@ def get_args():
                         help='prefetch number')
     parser.add_argument('--score_file',
                         required=True,
-                        help='output score file')                     
+                        help='output score file')
     parser.add_argument('--jit_model',
                         action='store_true',
                         default=False,
@@ -117,7 +117,7 @@ def main():
                 score = logits[i][:lengths[i]]
                 for keyword_i in range(num_keywords):
                     keyword_scores = score[:, keyword_i]
-                    score_frames = ' '.join(['{:.6f}'.format(x) 
+                    score_frames = ' '.join(['{:.6f}'.format(x)
                                             for x in keyword_scores.tolist()])
                     fout.write('{} {}\n'.format(key, score_frames))
             if batch_idx % 10 == 0:

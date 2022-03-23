@@ -23,7 +23,7 @@ def load_label_and_score(keyword, label_file, score_file):
         for line in fin:
             arr = line.strip().split()
             key = arr[0]
-            str_list = arr[1: ]
+            str_list = arr[1:]
             scores = list(map(float, str_list))
             score_table[key].append(scores)
     keyword_table = {}
@@ -93,4 +93,3 @@ if __name__ == '__main__':
                                                        false_alarm_per_hour,
                                                        false_reject_rate))
             threshold += args.step
-            
