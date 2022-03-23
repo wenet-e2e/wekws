@@ -55,12 +55,12 @@ def get_args():
                         default=100,
                         type=int,
                         help='prefetch number')
-    parser.add_argument('--score_file_dir',
+    parser.add_argument('--score_file',
                         required=True,
                         help='output score file')
     parser.add_argument('--num_keywords',
                         required=True,
-                        help='the number of keywords')
+                        help='the number of keywords')                        
     parser.add_argument('--jit_model',
                         action='store_true',
                         default=False,
@@ -106,42 +106,26 @@ def main():
         device = torch.device('cuda' if use_cuda else 'cpu')
     model = model.to(device)
     model.eval()
-    # add to write different keyword score file
-    num_keywords = int(args.num_keywords)
-    score_file_list = []
-    dir_abs_path = os.path.abspath(args.score_file_dir)
-    for i in range(num_keywords):
-        temp_list = ['score_longwav', 'txt']
-        temp_list.insert(1, str(i))
-        suffix = '.'.join(temp_list)
-        # print('suffix = ', suffix)
-        score_abs_path = os.path.join(dir_abs_path, suffix)
-        score_file_list.append(score_abs_path)
 
-    for abs_path in score_file_list:
-        with torch.no_grad(), open(abs_path, 'w', encoding='utf8') as fout:
-            keyword_label = abs_path.split('/')[-1].split('.')[1]
-            # print('keyword_label = ', keyword_label)
-            for batch_idx, batch in enumerate(test_data_loader):
-                keys, feats, target, lengths = batch
-                feats = feats.to(device)
-                lengths = lengths.to(device)
-                # mask = padding_mask(lengths).unsqueeze(2)
-                logits = model(feats)
-                # mask对应的true的部分用0填充
-                # Getting every frames desn't need to mask
-                # logits = logits.masked_fill(mask, 0.0)
-                logits = logits.cpu()
-                for i in range(len(keys)):
-                    key = keys[i]
-                    score = logits[i][:lengths[i]]
-                    score = score[:, int(keyword_label)]
-                    # keep 2 significant digits
-                    score = ' '.join([str("%.2g" % x) for x in score.tolist()])
-                    fout.write('{} {}\n'.format(key, score))
-                if batch_idx % 10 == 0:
-                    print('Progress batch {}'.format(batch_idx))
-                    sys.stdout.flush()
+    score_abs_path = os.path.abspath(args.score_file)
+    num_keywords = int(args.num_keywords)
+    with torch.no_grad(), open(score_abs_path, 'w', encoding='utf8') as fout:
+        for batch_idx, batch in enumerate(test_data_loader):
+            keys, feats, target, lengths = batch
+            feats = feats.to(device)
+            lengths = lengths.to(device)
+            logits = model(feats)
+            logits = logits.cpu()
+            for i in range(len(keys)):
+                key = keys[i]
+                score = logits[i][:lengths[i]]
+                for keyword_i in range(num_keywords):
+                    keyword_scores = score[:, keyword_i]
+                    score_frames = ' '.join(['{:.3g}'.format(x) for x in keyword_scores.tolist()])
+                    fout.write('{} {}\n'.format(key, score_frames))
+            if batch_idx % 10 == 0:
+                print('Progress batch {}'.format(batch_idx))
+                sys.stdout.flush()
 
 
 if __name__ == '__main__':

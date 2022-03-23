@@ -15,24 +15,20 @@
 
 import argparse
 import json
-
+from collections import defaultdict
 
 def load_label_and_score(keyword, label_file, score_file):
-    # utt_id : score list
-    score_table = {}
+    score_table = defaultdict(list)
     with open(score_file, 'r', encoding='utf8') as fin:
         for line in fin:
             arr = line.strip().split()
-            # key = utt_id
             key = arr[0]
-            # scores is a list
             str_list = arr[1:]
             scores = list(map(float, str_list))
-            score_table[key] = scores
+            score_table[key].append(scores)
     keyword_table = {}
     filler_table = {}
     filler_duration = 0.0
-    # label_file = data.list
     with open(label_file, 'r', encoding='utf8') as fin:
         for line in fin:
             obj = json.loads(line.strip())
@@ -40,19 +36,15 @@ def load_label_and_score(keyword, label_file, score_file):
             assert 'txt' in obj
             assert 'duration' in obj
             key = obj['key']
-            # txt is label
             index = obj['txt']
             duration = obj['duration']
             assert key in score_table
-            # txt == keyword , correct
             if index == keyword:
                 keyword_table[key] = score_table[key]
             else:
-                # false
                 filler_table[key] = score_table[key]
                 filler_duration += duration
     return keyword_table, filler_table, filler_duration
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='compute det curve')
@@ -60,29 +52,32 @@ if __name__ == '__main__':
     parser.add_argument('--keyword', type=int, default=0, help='score file')
     parser.add_argument('--score_file', required=True, help='score file')
     parser.add_argument('--step', type=float, default=0.01, help='score file')
+    parser.add_argument('--window_shift', type=int, default=50, 
+                        help='window_shift is used to skip the frames after triggered') 
     parser.add_argument('--stats_file',
                         required=True,
                         help='false reject/alarm stats file')
     args = parser.parse_args()
-    # 'window_shift' is used to skip the frames after triggered
-    window_shift = 50
+    window_shift = args.window_shift
     keyword_table, filler_table, filler_duration = load_label_and_score(
         args.keyword, args.test_data, args.score_file)
-    print('Filler total duration Hours: {}'.format(filler_duration / 3600.0))
+    print('Filler total duration Hours: {}'.format(filler_duration / 3600.0)) 
     with open(args.stats_file, 'w', encoding='utf8') as fout:
+        keyword_index = int(args.stats_file.split('/')[-1].split('.')[1])
         threshold = 0.0
         while threshold <= 1.0:
             num_false_reject = 0
             # transverse the all keyword_table
-            for key, score_list in keyword_table.items():
+            for key, scores_list in keyword_table.items():
                 # computer positive test sample, use the max score of list.
-                score = max(score_list)
+                score = max(scores_list[keyword_index])
                 if float(score) < threshold:
                     num_false_reject += 1
             num_false_alarm = 0
             # transverse the all filler_table
-            for key, score_list in filler_table.items():
+            for key, scores_list in filler_table.items():
                 i = 0
+                score_list = scores_list[keyword_index]
                 while i < len(score_list):
                     if score_list[i] >= threshold:
                         num_false_alarm += 1
