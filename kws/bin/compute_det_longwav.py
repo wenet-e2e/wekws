@@ -68,9 +68,6 @@ if __name__ == '__main__':
     keyword_table, filler_table, filler_duration = load_label_and_score(
         args.keyword, args.test_data, args.score_file)
     print('Filler total duration Hours: {}'.format(filler_duration / 3600.0))
-    # print('keyword_table.size = ', len(keyword_table))
-    # print('filler_table.size = ', len(filler_table))
-    # print('filler_duration = ', filler_duration)
     with open(args.stats_file, 'w', encoding='utf8') as fout:
         threshold = 0.0
         while threshold <= 1.0:
@@ -88,9 +85,9 @@ if __name__ == '__main__':
                 while i < len(score_list):
                     if score_list[i] >= threshold:
                         num_false_alarm += 1
-                        i += 1
-                    else:
                         i += window_shift
+                    else:
+                        i += 1
             if len(keyword_table) != 0 :
                 false_reject_rate = num_false_reject / len(keyword_table)
             num_false_alarm = max(num_false_alarm, 1e-6)

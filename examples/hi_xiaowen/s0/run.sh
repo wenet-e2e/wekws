@@ -7,13 +7,15 @@ stage=3
 stop_stage=3
 num_keywords=2
 
+config=conf/tcn.yaml            
 norm_mean=true
 norm_var=true
 gpus="0,1"
 
+dir=exp/ds_tcn
 
 num_average=30
-checkpoint=$dir/avg_${num_average}.pt
+checkpoint=
 score_checkpoint=$dir/avg_${num_average}.pt
 
 
@@ -94,8 +96,8 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
   mkdir -p $result_dir
   python kws/bin/score_longwav.py \
     --config $dir/config.yaml \
-    --test_data data/test/test_data.list \
-    --batch_size 5 \
+    --test_data data/test/data.list \
+    --batch_size 256 \
     --checkpoint $score_checkpoint \
     --score_file_dir $result_dir  \
     --num_keywords $num_keywords  \
@@ -104,7 +106,7 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
   for keyword in 0 1; do
     python kws/bin/compute_det_longwav.py \
       --keyword $keyword \
-      --test_data data/test/test_data.list \
+      --test_data data/test/data.list \
       --score_file $result_dir/score_longwav.${keyword}.txt \
       --stats_file $result_dir/stats_longwav.${keyword}.txt
   done
