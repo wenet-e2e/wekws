@@ -23,7 +23,7 @@ def load_label_and_score(keyword, label_file, score_file):
         for line in fin:
             arr = line.strip().split()
             key = arr[0]
-            str_list = arr[1:]
+            str_list = arr[1: ]
             scores = list(map(float, str_list))
             score_table[key].append(scores)
     keyword_table = {}
@@ -52,8 +52,8 @@ if __name__ == '__main__':
     parser.add_argument('--keyword', type=int, default=0, help='score file')
     parser.add_argument('--score_file', required=True, help='score file')
     parser.add_argument('--step', type=float, default=0.01, help='score file')
-    parser.add_argument('--window_shift', type=int, default=50, 
-                        help='window_shift is used to skip the frames after triggered') 
+    parser.add_argument('--window_shift', type=int, default=50,
+                        help='window_shift is used to skip the frames after triggered')
     parser.add_argument('--stats_file',
                         required=True,
                         help='false reject/alarm stats file')
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     window_shift = args.window_shift
     keyword_table, filler_table, filler_duration = load_label_and_score(
         args.keyword, args.test_data, args.score_file)
-    print('Filler total duration Hours: {}'.format(filler_duration / 3600.0)) 
+    print('Filler total duration Hours: {}'.format(filler_duration / 3600.0))
     with open(args.stats_file, 'w', encoding='utf8') as fout:
         keyword_index = int(args.stats_file.split('/')[-1].split('.')[1])
         threshold = 0.0
@@ -93,3 +93,4 @@ if __name__ == '__main__':
                                                        false_alarm_per_hour,
                                                        false_reject_rate))
             threshold += args.step
+            

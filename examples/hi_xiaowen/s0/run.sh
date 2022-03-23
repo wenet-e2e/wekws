@@ -101,7 +101,6 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     --batch_size 256 \
     --checkpoint $score_checkpoint \
     --score_file $result_dir/score_longwav.txt  \
-    --num_keywords $num_keywords  \
     --num_workers 8
 
   for keyword in 0 1; do

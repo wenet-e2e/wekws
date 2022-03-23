@@ -57,10 +57,7 @@ def get_args():
                         help='prefetch number')
     parser.add_argument('--score_file',
                         required=True,
-                        help='output score file')
-    parser.add_argument('--num_keywords',
-                        required=True,
-                        help='the number of keywords')                        
+                        help='output score file')                     
     parser.add_argument('--jit_model',
                         action='store_true',
                         default=False,
@@ -106,22 +103,22 @@ def main():
         device = torch.device('cuda' if use_cuda else 'cpu')
     model = model.to(device)
     model.eval()
-
     score_abs_path = os.path.abspath(args.score_file)
-    num_keywords = int(args.num_keywords)
     with torch.no_grad(), open(score_abs_path, 'w', encoding='utf8') as fout:
         for batch_idx, batch in enumerate(test_data_loader):
             keys, feats, target, lengths = batch
             feats = feats.to(device)
             lengths = lengths.to(device)
             logits = model(feats)
+            num_keywords = logits.shape[2]
             logits = logits.cpu()
             for i in range(len(keys)):
                 key = keys[i]
                 score = logits[i][:lengths[i]]
                 for keyword_i in range(num_keywords):
                     keyword_scores = score[:, keyword_i]
-                    score_frames = ' '.join(['{:.3g}'.format(x) for x in keyword_scores.tolist()])
+                    score_frames = ' '.join(['{:.6f}'.format(x) 
+                                            for x in keyword_scores.tolist()])
                     fout.write('{} {}\n'.format(key, score_frames))
             if batch_idx % 10 == 0:
                 print('Progress batch {}'.format(batch_idx))
