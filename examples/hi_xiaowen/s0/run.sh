@@ -3,21 +3,22 @@
 
 . ./path.sh
 
-stage=3
-stop_stage=3
+stage=0
+stop_stage=4
 num_keywords=2
 
-config=conf/tcn.yaml            
+config=conf/ds_tcn.yaml
 norm_mean=true
 norm_var=true
 gpus="0,1"
 
+checkpoint=
 dir=exp/ds_tcn
 
 num_average=30
-checkpoint=
 score_checkpoint=$dir/avg_${num_average}.pt
 
+download_dir=./mobvoi_data             
 
 . tools/parse_options.sh || exit 1;
 

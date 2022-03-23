@@ -1,4 +1,5 @@
 # Copyright (c) 2021 Binbin Zhang(binbzha@qq.com)
+#               2022 Shaoqing Yu(yu954793264@163.com)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,8 +25,8 @@ def load_label_and_score(keyword, label_file, score_file):
             arr = line.strip().split()
             # key = utt_id
             key = arr[0]
-            # scores is a list 
-            str_list = arr[1: ]
+            # scores is a list
+            str_list = arr[1:]
             scores = list(map(float, str_list))
             score_table[key] = scores
     keyword_table = {}
@@ -43,7 +44,7 @@ def load_label_and_score(keyword, label_file, score_file):
             index = obj['txt']
             duration = obj['duration']
             assert key in score_table
-            # txt == keyword , correct 
+            # txt == keyword , correct
             if index == keyword:
                 keyword_table[key] = score_table[key]
             else:

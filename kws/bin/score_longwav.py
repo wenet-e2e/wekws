@@ -1,4 +1,5 @@
 # Copyright (c) 2021 Binbin Zhang(binbzha@qq.com)
+#               2022 Shaoqing Yu(yu954793264@163.com)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,7 +28,6 @@ from torch.utils.data import DataLoader
 from kws.dataset.dataset import Dataset
 from kws.model.kws_model import init_model
 from kws.utils.checkpoint import load_checkpoint
-from kws.utils.mask import padding_mask
 
 
 def get_args():
@@ -60,7 +60,7 @@ def get_args():
                         help='output score file')
     parser.add_argument('--num_keywords',
                         required=True,
-                        help='the number of keywords')                        
+                        help='the number of keywords')
     parser.add_argument('--jit_model',
                         action='store_true',
                         default=False,
