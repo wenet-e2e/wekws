@@ -15,7 +15,6 @@
 
 import argparse
 import json
-from collections import defaultdict
 
 
 def load_label_and_score(keyword, label_file, score_file):
