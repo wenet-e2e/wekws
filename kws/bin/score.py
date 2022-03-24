@@ -1,4 +1,5 @@
 # Copyright (c) 2021 Binbin Zhang(binbzha@qq.com)
+#               2022 Shaoqing Yu(954793264@qq.com)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,7 +28,6 @@ from torch.utils.data import DataLoader
 from kws.dataset.dataset import Dataset
 from kws.model.kws_model import init_model
 from kws.utils.checkpoint import load_checkpoint
-from kws.utils.mask import padding_mask
 
 
 def get_args():
@@ -102,23 +102,25 @@ def main():
         use_cuda = args.gpu >= 0 and torch.cuda.is_available()
         device = torch.device('cuda' if use_cuda else 'cpu')
     model = model.to(device)
-
     model.eval()
-    with torch.no_grad(), open(args.score_file, 'w', encoding='utf8') as fout:
+    score_abs_path = os.path.abspath(args.score_file)
+    with torch.no_grad(), open(score_abs_path, 'w', encoding='utf8') as fout:
         for batch_idx, batch in enumerate(test_data_loader):
             keys, feats, target, lengths = batch
             feats = feats.to(device)
             lengths = lengths.to(device)
-            mask = padding_mask(lengths).unsqueeze(2)
             logits = model(feats)
-            logits = logits.masked_fill(mask, 0.0)
-            max_logits, _ = logits.max(dim=1)
-            max_logits = max_logits.cpu()
+            num_keywords = logits.shape[2]
+            logits = logits.cpu()
             for i in range(len(keys)):
                 key = keys[i]
-                score = max_logits[i]
-                score = ' '.join([str(x) for x in score.tolist()])
-                fout.write('{} {}\n'.format(key, score))
+                score = logits[i][:lengths[i]]
+                for keyword_i in range(num_keywords):
+                    keyword_scores = score[:, keyword_i]
+                    score_frames = ' '.join(['{:.6f}'.format(x)
+                                            for x in keyword_scores.tolist()])
+                    fout.write('{} {} {}\n'.format(
+                        key, keyword_i, score_frames))
             if batch_idx % 10 == 0:
                 print('Progress batch {}'.format(batch_idx))
                 sys.stdout.flush()

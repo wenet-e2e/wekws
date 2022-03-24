@@ -21,7 +21,7 @@ score_checkpoint=$dir/avg_${num_average}.pt
 download_dir=./data/local # your data dir
 
 . tools/parse_options.sh || exit 1;
-
+window_shift=50
 
 if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
   echo "Download and extracte all datasets"
@@ -100,12 +100,14 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     --test_data data/test/data.list \
     --batch_size 256 \
     --checkpoint $score_checkpoint \
-    --score_file $result_dir/score.txt \
+    --score_file $result_dir/score.txt  \
     --num_workers 8
+
   for keyword in 0 1; do
     python kws/bin/compute_det.py \
       --keyword $keyword \
       --test_data data/test/data.list \
+      --window_shift $window_shift \
       --score_file $result_dir/score.txt \
       --stats_file $result_dir/stats.${keyword}.txt
   done
@@ -157,4 +159,3 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
     --jit_model $dir/$jit_model  \
     --onnx_model $dir/$onnx_model
 fi
-
