@@ -119,7 +119,8 @@ def main():
                     keyword_scores = score[:, keyword_i]
                     score_frames = ' '.join(['{:.6f}'.format(x)
                                             for x in keyword_scores.tolist()])
-                    fout.write('{} {}\n'.format(key, score_frames))
+                    fout.write('{} {} {}\n'.format(
+                        key, keyword_i, score_frames))
             if batch_idx % 10 == 0:
                 print('Progress batch {}'.format(batch_idx))
                 sys.stdout.flush()
