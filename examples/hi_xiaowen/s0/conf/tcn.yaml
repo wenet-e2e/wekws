@@ -41,6 +41,6 @@ optim_conf:
 
 training_config:
     grad_clip: 5
-    max_epoch: 2
+    max_epoch: 80
     log_interval: 10
 
