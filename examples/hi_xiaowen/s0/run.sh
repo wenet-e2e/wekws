@@ -101,7 +101,8 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     --batch_size 256 \
     --checkpoint $score_checkpoint \
     --score_file $result_dir/score.txt  \
-    --num_workers 8
+    --num_workers 8 \
+    --streaming_chunk 20
 
   for keyword in 0 1; do
     python kws/bin/compute_det.py \
@@ -136,7 +137,8 @@ if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
     --jit_model \
     --checkpoint $dir/$quantize_score_checkpoint \
     --score_file $result_dir/score.txt \
-    --num_workers 8
+    --num_workers 8 \
+    --streaming_chunk 20
   for keyword in 0 1; do
     python kws/bin/compute_det.py \
       --keyword $keyword \

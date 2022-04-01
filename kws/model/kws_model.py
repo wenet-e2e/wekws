@@ -46,6 +46,7 @@ class KWSModel(nn.Module):
         backbone: nn.Module,
         classifier: nn.Module,
         activation: nn.Module,
+        streaming_chunk: int,
     ):
         super().__init__()
         self.idim = idim
@@ -56,15 +57,33 @@ class KWSModel(nn.Module):
         self.backbone = backbone
         self.classifier = classifier
         self.activation = activation
+        self.streaming_chunk = streaming_chunk
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.global_cmvn is not None:
             x = self.global_cmvn(x)
-        x = self.preprocessing(x)
-        x, _ = self.backbone(x)
-        x = self.classifier(x)
-        x = self.activation(x)
-        return x
+        if self.streaming_chunk <= 0:
+            x = self.preprocessing(x)
+            x, _ = self.backbone(x)
+            x = self.classifier(x)
+            x = self.activation(x)
+            return x
+        else:
+            stride = self.streaming_chunk
+            num_frames = x.size(1) #(B, T, D)
+            cache: Optional[torch.Tensor] = None
+            out = []
+            for cur in range(0, num_frames, stride):
+                end = min(cur + stride, num_frames)
+                x_s = x[:, cur:end, :]
+                x_s = self.preprocessing(x_s)
+                x_s, cache = self.backbone.forward_chunk(x_s, cache)
+                x_s = self.classifier(x_s)
+                x_s = self.activation(x_s)
+                out.append(x_s)
+            out_ = torch.cat(out, dim=1)
+            # wait all num_frames out, then return
+            return out_
 
     def fuse_modules(self):
         self.preprocessing.fuse_modules()
@@ -86,6 +105,10 @@ def init_model(configs):
     input_dim = configs['input_dim']
     output_dim = configs['output_dim']
     hidden_dim = configs['hidden_dim']
+
+    streaming_chunk = -1
+    if ('streaming_chunk' in configs and configs['streaming_chunk'] > 0):
+        streaming_chunk = configs['streaming_chunk']
 
     prep_type = configs['preprocessing']['type']
     if prep_type == 'linear':
@@ -157,5 +180,5 @@ def init_model(configs):
         activation = nn.Sigmoid()
 
     kws_model = KWSModel(input_dim, output_dim, hidden_dim, global_cmvn,
-                         preprocessing, backbone, classifier, activation)
+                         preprocessing, backbone, classifier, activation, streaming_chunk)
     return kws_model
