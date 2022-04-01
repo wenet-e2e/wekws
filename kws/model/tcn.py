@@ -143,7 +143,7 @@ class TCN(nn.Module):
             out_caches.append(c)
         x = x.transpose(1, 2)  # (B, T, D)
         new_cache = torch.cat(out_caches, dim=2)
-        return x, new_cache 
+        return x, new_cache
 
     def forward_chunk(self, x: torch.Tensor, cache: Optional[torch.Tensor] = None):
         """
@@ -160,11 +160,11 @@ class TCN(nn.Module):
         if cache is None:
             cache = torch.zeros(x.size(0), x.size(1), self.padding)
         for block in self.network:
-            cur_padding += block.padding 
+            cur_padding += block.padding
             x, c = block(x, cache[:, :, cur_padding - block.padding : cur_padding])
-            out_caches.append(c) # c (B, D, T)
+            out_caches.append(c)
         x = x.transpose(1, 2)  # (B, T, D)
-        new_cache = torch.cat(out_caches, dim=2) 
+        new_cache = torch.cat(out_caches, dim=2)
         return x, new_cache
 
     def fuse_modules(self):

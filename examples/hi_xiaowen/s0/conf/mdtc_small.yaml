@@ -30,6 +30,7 @@ model:
     preprocessing:
         type: none
     backbone:
+        causal: true
         type: mdtc
         num_stack: 3
         stack_size: 4

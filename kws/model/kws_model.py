@@ -70,7 +70,7 @@ class KWSModel(nn.Module):
             return x
         else:
             stride = self.streaming_chunk
-            num_frames = x.size(1) #(B, T, D)
+            num_frames = x.size(1)
             cache: Optional[torch.Tensor] = None
             out = []
             for cur in range(0, num_frames, stride):
@@ -180,5 +180,6 @@ def init_model(configs):
         activation = nn.Sigmoid()
 
     kws_model = KWSModel(input_dim, output_dim, hidden_dim, global_cmvn,
-                         preprocessing, backbone, classifier, activation, streaming_chunk)
+                         preprocessing, backbone, classifier, activation,
+                         streaming_chunk)
     return kws_model

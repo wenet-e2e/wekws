@@ -35,6 +35,7 @@ model:
         stack_size: 4
         kernel_size: 5
         hidden_dim: 64
+        causal: true
 
 optim: adam
 optim_conf:
