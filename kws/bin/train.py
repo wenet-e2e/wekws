@@ -158,7 +158,7 @@ def main():
     start_epoch = infos.get('epoch', -1) + 1
     cv_loss = infos.get('cv_loss', 0.0)
     # get the last epoch lr
-    lr_last_epoch = infos.get('lr', 0.001)
+    lr_last_epoch = infos.get('lr', configs['optim_conf']['lr'])
     configs['optim_conf']['lr'] = lr_last_epoch
     model_dir = args.model_dir
     writer = None
