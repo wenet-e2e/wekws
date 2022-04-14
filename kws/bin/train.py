@@ -157,7 +157,9 @@ def main():
         infos = {}
     start_epoch = infos.get('epoch', -1) + 1
     cv_loss = infos.get('cv_loss', 0.0)
-
+    # get the last epoch lr
+    lr_last_epoch = infos.get('lr', 0.001)
+    configs['optim_conf']['lr'] = lr_last_epoch
     model_dir = args.model_dir
     writer = None
     if rank == 0:
