@@ -1,4 +1,5 @@
 # Copyright (c) 2021 Binbin Zhang(binbzha@qq.com)
+#               2022 Shaoqing Yu(954793264@qq.com)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,13 +18,18 @@ import json
 
 
 def load_label_and_score(keyword, label_file, score_file):
+    # score_table: {uttid: [keywordlist]}
     score_table = {}
     with open(score_file, 'r', encoding='utf8') as fin:
         for line in fin:
             arr = line.strip().split()
             key = arr[0]
-            score = float(arr[keyword + 1])
-            score_table[key] = score
+            current_keyword = arr[1]
+            str_list = arr[2:]
+            if int(current_keyword) == keyword:
+                scores = list(map(float, str_list))
+                if key not in score_table:
+                    score_table.update({key: scores})
     keyword_table = {}
     filler_table = {}
     filler_duration = 0.0
@@ -48,32 +54,47 @@ def load_label_and_score(keyword, label_file, score_file):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='compute det curve')
     parser.add_argument('--test_data', required=True, help='label file')
-    parser.add_argument('--keyword', type=int, default=0, help='score file')
+    parser.add_argument('--keyword', type=int, default=0, help='keyword label')
     parser.add_argument('--score_file', required=True, help='score file')
-    parser.add_argument('--step', type=float, default=0.01, help='score file')
+    parser.add_argument('--step', type=float, default=0.01,
+                        help='threshold step')
+    parser.add_argument('--window_shift', type=int, default=50,
+                        help='window_shift is used to skip the frames after triggered')
     parser.add_argument('--stats_file',
                         required=True,
                         help='false reject/alarm stats file')
     args = parser.parse_args()
-
+    window_shift = args.window_shift
     keyword_table, filler_table, filler_duration = load_label_and_score(
         args.keyword, args.test_data, args.score_file)
     print('Filler total duration Hours: {}'.format(filler_duration / 3600.0))
-
     with open(args.stats_file, 'w', encoding='utf8') as fout:
+        keyword_index = int(args.keyword)
         threshold = 0.0
         while threshold <= 1.0:
             num_false_reject = 0
-            for key, score in keyword_table.items():
-                if score < threshold:
+            # transverse the all keyword_table
+            for key, score_list in keyword_table.items():
+                # computer positive test sample, use the max score of list.
+                score = max(score_list)
+                if float(score) < threshold:
                     num_false_reject += 1
             num_false_alarm = 0
-            for key, score in filler_table.items():
-                if score >= threshold:
-                    num_false_alarm += 1
-            false_reject_rate = num_false_reject / len(keyword_table)
+            # transverse the all filler_table
+            for key, score_list in filler_table.items():
+                i = 0
+                while i < len(score_list):
+                    if score_list[i] >= threshold:
+                        num_false_alarm += 1
+                        i += window_shift
+                    else:
+                        i += 1
+            if len(keyword_table) != 0:
+                false_reject_rate = num_false_reject / len(keyword_table)
             num_false_alarm = max(num_false_alarm, 1e-6)
-            false_alarm_per_hour = num_false_alarm / (filler_duration / 3600.0)
+            if filler_duration != 0:
+                false_alarm_per_hour = num_false_alarm / \
+                    (filler_duration / 3600.0)
             fout.write('{:.6f} {:.6f} {:.6f}\n'.format(threshold,
                                                        false_alarm_per_hour,
                                                        false_reject_rate))

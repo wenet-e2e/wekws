@@ -95,21 +95,21 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     --val_best
   result_dir=$dir/test_$(basename $score_checkpoint)
   mkdir -p $result_dir
-  python kws/bin/score_longwav.py \
+  python kws/bin/score.py \
     --config $dir/config.yaml \
     --test_data data/test/data.list \
     --batch_size 256 \
     --checkpoint $score_checkpoint \
-    --score_file $result_dir/score_longwav.txt  \
+    --score_file $result_dir/score.txt  \
     --num_workers 8
 
   for keyword in 0 1; do
-    python kws/bin/compute_det_longwav.py \
+    python kws/bin/compute_det.py \
       --keyword $keyword \
       --test_data data/test/data.list \
       --window_shift $window_shift \
-      --score_file $result_dir/score_longwav.txt \
-      --stats_file $result_dir/stats_longwav.${keyword}.txt
+      --score_file $result_dir/score.txt \
+      --stats_file $result_dir/stats.${keyword}.txt
   done
 fi
 
