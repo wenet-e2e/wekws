@@ -156,6 +156,6 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
     --jit_model $dir/$jit_model
   python kws/bin/export_onnx.py \
     --config $dir/config.yaml \
-    --jit_model $dir/$jit_model  \
+    --checkpoint $score_checkpoint \
     --onnx_model $dir/$onnx_model
 fi
