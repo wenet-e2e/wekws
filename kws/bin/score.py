@@ -55,6 +55,10 @@ def get_args():
                         default=100,
                         type=int,
                         help='prefetch number')
+    parser.add_argument('--streaming_chunk',
+                        default=-1,
+                        type=int,
+                        help='streaming chunk size for inference')
     parser.add_argument('--score_file',
                         required=True,
                         help='output score file')
@@ -83,6 +87,8 @@ def main():
     test_conf['shuffle'] = False
     test_conf['feature_extraction_conf']['dither'] = 0.0
     test_conf['batch_conf']['batch_size'] = args.batch_size
+
+    configs['model']['streaming_chunk'] = args.streaming_chunk
 
     test_dataset = Dataset(args.test_data, test_conf)
     test_data_loader = DataLoader(test_dataset,
