@@ -109,7 +109,7 @@ def main():
             keys, feats, target, lengths = batch
             feats = feats.to(device)
             lengths = lengths.to(device)
-            logits = model(feats)
+            logits, _ = model(feats)
             num_keywords = logits.shape[2]
             logits = logits.cpu()
             for i in range(len(keys)):

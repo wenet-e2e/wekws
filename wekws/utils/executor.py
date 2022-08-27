@@ -43,7 +43,7 @@ class Executor:
             num_utts = feats_lengths.size(0)
             if num_utts == 0:
                 continue
-            logits = model(feats)
+            logits, _ = model(feats)
             loss_type = args.get('criterion', 'max_pooling')
             loss, acc = criterion(loss_type, logits, target, feats_lengths,
                                   min_duration)
@@ -76,7 +76,7 @@ class Executor:
                 num_utts = feats_lengths.size(0)
                 if num_utts == 0:
                     continue
-                logits = model(feats)
+                logits, _ = model(feats)
                 loss, acc = criterion(args.get('criterion', 'max_pooling'),
                                       logits, target, feats_lengths)
                 if torch.isfinite(loss):

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
+from typing import Tuple
 
 import torch
 import torch.nn as nn
@@ -31,15 +31,21 @@ class Block(nn.Module):
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()
 
-    def forward(self, x: torch.Tensor, cache: Optional[torch.Tensor] = None):
+    def forward(
+        self,
+        x: torch.Tensor,
+        cache: torch.Tensor = torch.zeros(0, 0, 0, dtype=torch.float)
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Args:
             x(torch.Tensor): Input tensor (B, D, T)
+            cache(torch.Tensor): Input cache(B, D, self.padding)
         Returns:
-            torch.Tensor(B, D, T)
+            torch.Tensor(B, D, T): output
+            torch.Tensor(B, D, self.padding): new cache
         """
         # The CNN used here is causal convolution
-        if cache is None:
+        if cache.size(0) == 0:
             y = F.pad(x, (self.padding, 0), value=0.0)
         else:
             y = torch.cat((cache, x), dim=2)
@@ -127,10 +133,15 @@ class TCN(nn.Module):
             self.network.append(
                 block_class(channel, kernel_size, dilation, dropout))
 
-    def forward(self, x: torch.Tensor, cache: Optional[torch.Tensor] = None):
+    def forward(
+        self,
+        x: torch.Tensor,
+        in_cache: torch.Tensor = torch.zeros(0, 0, 0, dtype=torch.float)
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Args:
             x (torch.Tensor): Input tensor (B, T, D)
+            in_cache(torhc.Tensor): (B, D, C), C is the accumulated cache size
 
         Returns:
             torch.Tensor(B, T, D)
@@ -138,9 +149,15 @@ class TCN(nn.Module):
         """
         x = x.transpose(1, 2)  # (B, D, T)
         out_caches = []
+        offset = 0
         for block in self.network:
-            x, c = block(x)
-            out_caches.append(c)
+            if in_cache.size(0) > 0:
+                c_in = in_cache[:, :, offset:offset + block.padding]
+            else:
+                c_in = torch.zeros(0, 0, 0)
+            x, c_out = block(x, c_in)
+            out_caches.append(c_out)
+            offset += block.padding
         x = x.transpose(1, 2)  # (B, T, D)
         new_cache = torch.cat(out_caches, dim=2)
         return x, new_cache
