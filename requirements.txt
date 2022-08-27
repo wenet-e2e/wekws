@@ -1,6 +1,13 @@
-flake8==3.8.2
 pyyaml>=5.1
 tensorboard
 tensorboardX
 matplotlib
 onnxruntime
+flake8==3.8.2
+flake8-bugbear
+flake8-comprehensions
+flake8-executable
+flake8-pyi==20.5.0
+mccabe
+pycodestyle==2.6.0
+pyflakes==2.2.0
