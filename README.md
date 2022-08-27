@@ -27,8 +27,8 @@ git clone https://github.com/wenet-e2e/wekws.git
 - Create Conda env:
 
 ``` sh
-conda create -n wenet python=3.8
-conda activate wenet
+conda create -n wekws python=3.8
+conda activate wekws
 pip install -r requirements.txt
 conda install pytorch=1.10.0 torchaudio=0.10.0 cudatoolkit=11.1 -c pytorch -c conda-forge
 ```
