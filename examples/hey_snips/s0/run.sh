@@ -68,7 +68,7 @@ if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
   $norm_var && cmvn_opts="$cmvn_opts --norm_var"
   num_gpus=$(echo $gpus | awk -F ',' '{print NF}')
   torchrun --standalone --nnodes=1 --nproc_per_node=$num_gpus \
-   kws/bin/train.py --gpus $gpus \
+   wekws/bin/train.py --gpus $gpus \
     --config $config \
     --train_data data/train/data.list \
     --cv_data data/dev/data.list \
@@ -83,14 +83,14 @@ fi
 
 if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
   echo "Do model average, Compute FRR/FAR ..."
-  python kws/bin/average_model.py \
+  python wekws/bin/average_model.py \
     --dst_model $score_checkpoint \
     --src_path $dir  \
     --num ${num_average} \
     --val_best
   result_dir=$dir/test_$(basename $score_checkpoint)
   mkdir -p $result_dir
-  python kws/bin/score.py \
+  python wekws/bin/score.py \
     --config $dir/config.yaml \
     --test_data data/test/data.list \
     --batch_size 256 \
@@ -100,13 +100,13 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
   first_keyword=0
   last_keyword=$(($num_keywords+$first_keyword-1))
   for keyword in $(seq $first_keyword $last_keyword); do
-    python kws/bin/compute_det.py \
+    python wekws/bin/compute_det.py \
       --keyword $keyword \
       --test_data data/test/data.list \
       --score_file $result_dir/score.txt \
       --stats_file $result_dir/stats.${keyword}.txt
   done
-  python kws/bin/plot_det_curve.py \
+  python wekws/bin/plot_det_curve.py \
     --keywords_dict dict/words.txt \
     --stats_dir $result_dir \
     --figure_file $result_dir/det.png \
@@ -118,7 +118,7 @@ fi
 
 
 if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
-  python kws/bin/export_jit.py --config $dir/config.yaml \
+  python wekws/bin/export_jit.py --config $dir/config.yaml \
     --checkpoint $score_checkpoint \
     --output_file $dir/final.zip \
     --output_quant_file $dir/final.quant.zip

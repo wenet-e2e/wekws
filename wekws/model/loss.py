@@ -15,7 +15,7 @@
 import torch
 import torch.nn.functional as F
 
-from kws.utils.mask import padding_mask
+from wekws.utils.mask import padding_mask
 
 
 def max_pooling_loss(logits: torch.Tensor,

@@ -17,7 +17,7 @@ import logging
 import torch
 from torch.nn.utils import clip_grad_norm_
 
-from kws.model.loss import criterion
+from wekws.model.loss import criterion
 
 
 class Executor:
