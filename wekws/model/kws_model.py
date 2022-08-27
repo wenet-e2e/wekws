@@ -19,8 +19,10 @@ import torch
 import torch.nn as nn
 
 from wekws.model.cmvn import GlobalCMVN
-from wekws.model.classifier import GlobalClassifier, LastClassifier, LinearClassifier
-from wekws.model.subsampling import LinearSubsampling1, Conv1dSubsampling1, NoSubsampling
+from wekws.model.classifier import (GlobalClassifier, LastClassifier,
+                                    LinearClassifier)
+from wekws.model.subsampling import (LinearSubsampling1, Conv1dSubsampling1,
+                                     NoSubsampling)
 from wekws.model.tcn import TCN, CnnBlock, DsCnnBlock
 from wekws.model.mdtc import MDTC
 from wekws.utils.cmvn import load_cmvn
