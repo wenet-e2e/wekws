@@ -26,11 +26,11 @@ import yaml
 from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 
-from kws.dataset.dataset import Dataset
-from kws.utils.checkpoint import load_checkpoint, save_checkpoint
-from kws.model.kws_model import init_model
-from kws.utils.executor import Executor
-from kws.utils.train_utils import count_parameters, set_mannul_seed
+from wekws.dataset.dataset import Dataset
+from wekws.utils.checkpoint import load_checkpoint, save_checkpoint
+from wekws.model.kws_model import init_model
+from wekws.utils.executor import Executor
+from wekws.utils.train_utils import count_parameters, set_mannul_seed
 
 
 def get_args():

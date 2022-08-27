@@ -18,12 +18,14 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
-from kws.model.cmvn import GlobalCMVN
-from kws.model.classifier import GlobalClassifier, LastClassifier, LinearClassifier
-from kws.model.subsampling import LinearSubsampling1, Conv1dSubsampling1, NoSubsampling
-from kws.model.tcn import TCN, CnnBlock, DsCnnBlock
-from kws.model.mdtc import MDTC
-from kws.utils.cmvn import load_cmvn
+from wekws.model.cmvn import GlobalCMVN
+from wekws.model.classifier import (GlobalClassifier, LastClassifier,
+                                    LinearClassifier)
+from wekws.model.subsampling import (LinearSubsampling1, Conv1dSubsampling1,
+                                     NoSubsampling)
+from wekws.model.tcn import TCN, CnnBlock, DsCnnBlock
+from wekws.model.mdtc import MDTC
+from wekws.utils.cmvn import load_cmvn
 
 
 class KWSModel(nn.Module):

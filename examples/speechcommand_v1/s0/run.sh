@@ -68,7 +68,7 @@ if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
   $norm_var && cmvn_opts="$cmvn_opts --norm_var"
   num_gpus=$(echo $gpus | awk -F ',' '{print NF}')
   torchrun --standalone --nnodes=1 --nproc_per_node=$num_gpus \
-   kws/bin/train.py --gpus $gpus \
+   wekws/bin/train.py --gpus $gpus \
     --config $config \
     --train_data data/train/data.list \
     --cv_data data/valid/data.list \
@@ -82,7 +82,7 @@ fi
 
 if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
   # Do model average
-  python kws/bin/average_model.py \
+  python wekws/bin/average_model.py \
     --dst_model $score_checkpoint \
     --src_path $dir  \
     --num ${num_average} \
@@ -91,7 +91,7 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
   # Testing
   result_dir=$dir/test_$(basename $score_checkpoint)
   mkdir -p $result_dir
-  python kws/bin/compute_accuracy.py --gpu 3 \
+  python wekws/bin/compute_accuracy.py --gpu 3 \
     --config $dir/config.yaml \
     --test_data data/test/data.list \
     --batch_size 256 \
@@ -101,7 +101,7 @@ fi
 
 
 if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
-  python kws/bin/export_jit.py --config $dir/config.yaml \
+  python wekws/bin/export_jit.py --config $dir/config.yaml \
     --checkpoint $score_checkpoint \
     --output_file $dir/final.zip \
     --output_quant_file $dir/final.quant.zip

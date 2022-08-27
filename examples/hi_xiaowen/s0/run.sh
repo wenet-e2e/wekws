@@ -73,7 +73,7 @@ if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
   $norm_var && cmvn_opts="$cmvn_opts --norm_var"
   num_gpus=$(echo $gpus | awk -F ',' '{print NF}')
   torchrun --standalone --nnodes=1 --nproc_per_node=$num_gpus \
-    kws/bin/train.py --gpus $gpus \
+    wekws/bin/train.py --gpus $gpus \
       --config $config \
       --train_data data/train/data.list \
       --cv_data data/dev/data.list \
@@ -88,14 +88,14 @@ fi
 
 if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
   echo "Do model average, Compute FRR/FAR ..."
-  python kws/bin/average_model.py \
+  python wekws/bin/average_model.py \
     --dst_model $score_checkpoint \
     --src_path $dir  \
     --num ${num_average} \
     --val_best
   result_dir=$dir/test_$(basename $score_checkpoint)
   mkdir -p $result_dir
-  python kws/bin/score.py \
+  python wekws/bin/score.py \
     --config $dir/config.yaml \
     --test_data data/test/data.list \
     --batch_size 256 \
@@ -104,7 +104,7 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     --num_workers 8
 
   for keyword in 0 1; do
-    python kws/bin/compute_det.py \
+    python wekws/bin/compute_det.py \
       --keyword $keyword \
       --test_data data/test/data.list \
       --window_shift $window_shift \
@@ -120,7 +120,7 @@ if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
   quantize_score_checkpoint=$(basename $score_checkpoint | sed -e 's:.pt$:.quant.zip:g')
   cat data/train/data.list | python tools/shuffle_list.py --seed 777 | \
       head -n 10000 > $dir/calibration.list
-  python kws/bin/static_quantize.py \
+  python wekws/bin/static_quantize.py \
     --config $dir/config.yaml \
     --test_data $dir/calibration.list \
     --checkpoint $score_checkpoint \
@@ -129,7 +129,7 @@ if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
 
   result_dir=$dir/test_$(basename $quantize_score_checkpoint)
   mkdir -p $result_dir
-  python kws/bin/score.py \
+  python wekws/bin/score.py \
     --config $dir/config.yaml \
     --test_data data/test/data.list \
     --batch_size 256 \
@@ -138,7 +138,7 @@ if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
     --score_file $result_dir/score.txt \
     --num_workers 8
   for keyword in 0 1; do
-    python kws/bin/compute_det.py \
+    python wekws/bin/compute_det.py \
       --keyword $keyword \
       --test_data data/test/data.list \
       --score_file $result_dir/score.txt \
@@ -150,11 +150,11 @@ fi
 if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
   jit_model=$(basename $score_checkpoint | sed -e 's:.pt$:.zip:g')
   onnx_model=$(basename $score_checkpoint | sed -e 's:.pt$:.onnx:g')
-  python kws/bin/export_jit.py \
+  python wekws/bin/export_jit.py \
     --config $dir/config.yaml \
     --checkpoint $score_checkpoint \
     --jit_model $dir/$jit_model
-  python kws/bin/export_onnx.py \
+  python wekws/bin/export_onnx.py \
     --config $dir/config.yaml \
     --checkpoint $score_checkpoint \
     --onnx_model $dir/$onnx_model

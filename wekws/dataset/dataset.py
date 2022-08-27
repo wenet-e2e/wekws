@@ -18,8 +18,8 @@ import torch
 import torch.distributed as dist
 from torch.utils.data import IterableDataset
 
-import kws.dataset.processor as processor
-from kws.utils.file_utils import read_lists
+import wekws.dataset.processor as processor
+from wekws.utils.file_utils import read_lists
 
 
 class Processor(IterableDataset):

@@ -23,10 +23,10 @@ import torch
 import yaml
 from torch.utils.data import DataLoader
 
-from kws.dataset.dataset import Dataset
-from kws.model.kws_model import init_model
-from kws.utils.checkpoint import load_checkpoint
-from kws.utils.executor import Executor
+from wekws.dataset.dataset import Dataset
+from wekws.model.kws_model import init_model
+from wekws.utils.checkpoint import load_checkpoint
+from wekws.utils.executor import Executor
 
 
 def get_args():

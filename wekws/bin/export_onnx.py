@@ -18,8 +18,8 @@ import torch
 import yaml
 import onnxruntime as ort
 
-from kws.model.kws_model import init_model
-from kws.utils.checkpoint import load_checkpoint
+from wekws.model.kws_model import init_model
+from wekws.utils.checkpoint import load_checkpoint
 
 
 def get_args():
