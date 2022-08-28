@@ -17,6 +17,7 @@ import argparse
 import torch
 import yaml
 
+import onnx
 import onnxruntime as ort
 
 from wekws.model.kws_model import init_model
