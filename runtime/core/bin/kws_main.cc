@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < prob.size(); i++) {
       std::cout << "frame " << offset + i << " prob";
       for (int j = 0; j < prob[i].size(); j++) {
-        std::cout << " " << prob[i][0];
+        std::cout << " " << prob[i][j];
       }
       std::cout << std::endl;
     }
