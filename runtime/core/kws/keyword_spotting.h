@@ -16,6 +16,7 @@
 #ifndef KWS_KEYWORD_SPOTTING_H_
 #define KWS_KEYWORD_SPOTTING_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 

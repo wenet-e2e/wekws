@@ -137,8 +137,8 @@ class WavReader {
 
 class WavWriter {
  public:
-  WavWriter(const float* data, int num_samples, int num_channel, int sample_rate,
-            int bits_per_sample)
+  WavWriter(const float* data, int num_samples, int num_channel,
+            int sample_rate, int bits_per_sample)
       : data_(data),
         num_samples_(num_samples),
         num_channel_(num_channel),
