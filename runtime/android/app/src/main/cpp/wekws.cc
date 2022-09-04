@@ -69,8 +69,8 @@ void spot_thread_func() {
             max_hi_xiaowen = std::max(prob[t][0], max_hi_xiaowen);
             max_nihao_wenwen = std::max(prob[t][1], max_nihao_wenwen);
         }
-        float detect_prob = max_hi_xiaowen + max_nihao_wenwen;
-        result = std::to_string(offset) + "prob: " + std::to_string(detect_prob);
+        float max_prob = max_hi_xiaowen + max_nihao_wenwen;
+        result = std::to_string(offset) + " prob: " + std::to_string(max_prob);
         offset += prob.size();
     }
 }
