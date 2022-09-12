@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
 #include <iostream>
 #include <string>
 
@@ -49,10 +50,11 @@ int main(int argc, char* argv[]) {
     std::vector<std::vector<float>> prob;
     spotter.Forward(feats, &prob);
     for (int i = 0; i < prob.size(); i++) {
-      if (prob[i][0] > 0.1 || prob[i][1] > 0.1) {
-        std::cout << "frame " << offset + i << " prob " << prob[i][0] << " "
-                  << prob[i][1] << std::endl;
+      std::cout << "frame " << offset + i << " prob";
+      for (int j = 0; j < prob[i].size(); j++) {
+        std::cout << " " << prob[i][j];
       }
+      std::cout << std::endl;
     }
     // Reach the end of feature pipeline
     if (!ok) break;

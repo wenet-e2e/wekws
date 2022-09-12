@@ -115,39 +115,6 @@ fi
 
 
 if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
-  echo "Static quantization, compute FRR/FAR..."
-  # Apply static quantization
-  quantize_score_checkpoint=$(basename $score_checkpoint | sed -e 's:.pt$:.quant.zip:g')
-  cat data/train/data.list | python tools/shuffle_list.py --seed 777 | \
-      head -n 10000 > $dir/calibration.list
-  python wekws/bin/static_quantize.py \
-    --config $dir/config.yaml \
-    --test_data $dir/calibration.list \
-    --checkpoint $score_checkpoint \
-    --num_workers 8 \
-    --script_model $dir/$quantize_score_checkpoint
-
-  result_dir=$dir/test_$(basename $quantize_score_checkpoint)
-  mkdir -p $result_dir
-  python wekws/bin/score.py \
-    --config $dir/config.yaml \
-    --test_data data/test/data.list \
-    --batch_size 256 \
-    --jit_model \
-    --checkpoint $dir/$quantize_score_checkpoint \
-    --score_file $result_dir/score.txt \
-    --num_workers 8
-  for keyword in 0 1; do
-    python wekws/bin/compute_det.py \
-      --keyword $keyword \
-      --test_data data/test/data.list \
-      --score_file $result_dir/score.txt \
-      --stats_file $result_dir/stats.${keyword}.txt
-  done
-fi
-
-
-if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
   jit_model=$(basename $score_checkpoint | sed -e 's:.pt$:.zip:g')
   onnx_model=$(basename $score_checkpoint | sed -e 's:.pt$:.onnx:g')
   python wekws/bin/export_jit.py \
