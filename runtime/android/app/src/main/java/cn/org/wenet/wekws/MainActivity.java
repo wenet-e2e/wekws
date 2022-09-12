@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String LOG_TAG = "WEKWS";
     private static final int SAMPLE_RATE = 16000;  // The sampling rate
     private static final int MAX_QUEUE_SIZE = 2500;  // 100 seconds audio, 1 / 0.04 * 100
-    private static final List<String> resource = Arrays.asList("wenwen.ort");
+    private static final List<String> resource = Arrays.asList("kws.ort");
 
     private boolean startRecord = false;
     private AudioRecord record = null;

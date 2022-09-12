@@ -30,20 +30,20 @@ int offset;
 void init(JNIEnv* env, jobject, jstring jModelDir) {
   const char* pModelDir = env->GetStringUTFChars(jModelDir, nullptr);
 
-  std::string modelPath = std::string(pModelDir) + "/wenwen.ort";
+  std::string modelPath = std::string(pModelDir) + "/kws.ort";
   spotter = std::make_shared<KeywordSpotting>(modelPath);
 
   feature_config = std::make_shared<wenet::FeaturePipelineConfig>(40, 16000);
   feature_pipeline = std::make_shared<wenet::FeaturePipeline>(*feature_config);
 }
 
-void reset(JNIEnv *env, jobject) {
-    offset = 0;
-    result = "";
-    spotter->Reset();
+void reset(JNIEnv* env, jobject) {
+  offset = 0;
+  result = "";
+  spotter->Reset();
 }
 
-void accept_waveform(JNIEnv *env, jobject, jshortArray jWaveform) {
+void accept_waveform(JNIEnv* env, jobject, jshortArray jWaveform) {
   jsize size = env->GetArrayLength(jWaveform);
   int16_t* waveform = env->GetShortArrayElements(jWaveform, 0);
   std::vector<int16_t> v(waveform, waveform + size);
@@ -57,38 +57,38 @@ void set_input_finished() {
 }
 
 void spot_thread_func() {
-    while (true) {
-        std::vector<std::vector<float>> feats;
-        feature_pipeline->Read(80, &feats);
-        std::vector<std::vector<float>> prob;
-        spotter->Forward(feats, &prob);
+  while (true) {
+    std::vector<std::vector<float>> feats;
+    feature_pipeline->Read(80, &feats);
+    std::vector<std::vector<float>> prob;
+    spotter->Forward(feats, &prob);
 
-        float max_hi_xiaowen = 0;
-        float max_nihao_wenwen = 0;
-        for (int t = 0; t < prob.size(); t++) {
-            max_hi_xiaowen = std::max(prob[t][0], max_hi_xiaowen);
-            max_nihao_wenwen = std::max(prob[t][1], max_nihao_wenwen);
-        }
-        float max_prob = max_hi_xiaowen + max_nihao_wenwen;
-        result = std::to_string(offset) + " prob: " + std::to_string(max_prob);
-        offset += prob.size();
+    float max_hi_xiaowen = 0;
+    float max_nihao_wenwen = 0;
+    for (int t = 0; t < prob.size(); t++) {
+      max_hi_xiaowen = std::max(prob[t][0], max_hi_xiaowen);
+      max_nihao_wenwen = std::max(prob[t][1], max_nihao_wenwen);
     }
+    float max_prob = max_hi_xiaowen + max_nihao_wenwen;
+    result = std::to_string(offset) + " prob: " + std::to_string(max_prob);
+    offset += prob.size();
+  }
 }
 
 void start_spot() {
-    std::thread decode_thread(spot_thread_func);
-    decode_thread.detach();
+  std::thread decode_thread(spot_thread_func);
+  decode_thread.detach();
 }
 
-jstring get_result(JNIEnv *env, jobject) {
+jstring get_result(JNIEnv* env, jobject) {
   LOG(INFO) << "wekws ui result: " << result;
   return env->NewStringUTF(result.c_str());
 }
 }  // namespace wekws
 
-JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
-  JNIEnv *env;
-  if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
+JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void*) {
+  JNIEnv* env;
+  if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
     return JNI_ERR;
   }
 
@@ -98,15 +98,15 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
   }
 
   static const JNINativeMethod methods[] = {
-    {"init", "(Ljava/lang/String;)V", reinterpret_cast<void*>(wekws::init)},
-    {"reset", "()V", reinterpret_cast<void *>(wekws::reset)},
-    {"acceptWaveform", "([S)V",
-     reinterpret_cast<void *>(wekws::accept_waveform)},
-    {"setInputFinished", "()V",
-     reinterpret_cast<void *>(wekws::set_input_finished)},
-    {"startSpot", "()V", reinterpret_cast<void *>(wekws::start_spot)},
-    {"getResult", "()Ljava/lang/String;",
-     reinterpret_cast<void *>(wekws::get_result)},
+      {"init", "(Ljava/lang/String;)V", reinterpret_cast<void*>(wekws::init)},
+      {"reset", "()V", reinterpret_cast<void*>(wekws::reset)},
+      {"acceptWaveform", "([S)V",
+       reinterpret_cast<void*>(wekws::accept_waveform)},
+      {"setInputFinished", "()V",
+       reinterpret_cast<void*>(wekws::set_input_finished)},
+      {"startSpot", "()V", reinterpret_cast<void*>(wekws::start_spot)},
+      {"getResult", "()Ljava/lang/String;",
+       reinterpret_cast<void*>(wekws::get_result)},
   };
   int rc = env->RegisterNatives(c, methods,
                                 sizeof(methods) / sizeof(JNINativeMethod));
