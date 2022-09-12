@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int SAMPLE_RATE = 16000;  // The sampling rate
     private static final int MAX_QUEUE_SIZE = 2500;  // 100 seconds audio, 1 / 0.04 * 100
     private static final List<String> resource = Arrays.asList("kws.ort");
+    private static final String HINTS = "say \"Hey Snips\" to wakeup";
 
     private boolean startRecord = false;
     private AudioRecord record = null;
@@ -91,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         TextView textView = findViewById(R.id.textView);
-        textView.setText("");
+        textView.setText(HINTS);
         Spot.init(getFilesDir().getPath());
 
         Button button = findViewById(R.id.button);
