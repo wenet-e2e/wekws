@@ -11,7 +11,7 @@ dataset_conf:
         frame_shift: 10
         frame_length: 25
         dither: 1.0
-    spec_aug: false
+    spec_aug: true
     spec_aug_conf:
         num_t_mask: 1
         num_f_mask: 1
