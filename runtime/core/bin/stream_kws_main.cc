@@ -24,25 +24,26 @@
 #include "kws/keyword_spotting.h"
 #include "utils/log.h"
 
-int exiting = 0;
-std::shared_ptr<wenet::FeaturePipeline> feature_pipeline;
+int g_exiting = 0;
+std::shared_ptr<wenet::FeaturePipeline> g_feature_pipeline;
 
-void sig_routine(int dunno) {
+void SigRoutine(int dunno) {
   if (dunno == SIGINT) {
-    exiting = 1;
+    g_exiting = 1;
   }
 }
 
-static int recordCallback(const void* input, void* output,
-                          unsigned long framesCount,  // NOLINT
-                          const PaStreamCallbackTimeInfo* timeInfo,
-                          PaStreamCallbackFlags statusFlags, void* userData) {
+static int RecordCallback(const void* input, void* output,
+                          unsigned long frames_count,  // NOLINT
+                          const PaStreamCallbackTimeInfo* time_info,
+                          PaStreamCallbackFlags status_flags, void* user_data) {
   const auto* pcm_data = static_cast<const int16_t*>(input);
-  std::vector<int16_t> v(pcm_data, pcm_data + framesCount);
-  feature_pipeline->AcceptWaveform(v);
+  std::vector<int16_t> v(pcm_data, pcm_data + frames_count);
+  g_feature_pipeline->AcceptWaveform(v);
 
-  if (exiting) {
+  if (g_exiting) {
     LOG(INFO) << "Exiting loop.";
+    g_feature_pipeline->set_input_finished();
     return paComplete;
   } else {
     return paContinue;
@@ -58,10 +59,10 @@ int main(int argc, char* argv[]) {
   const std::string model_path = argv[3];
 
   wenet::FeaturePipelineConfig feature_config(num_bins, 16000);
-  feature_pipeline = std::make_shared<wenet::FeaturePipeline>(feature_config);
+  g_feature_pipeline = std::make_shared<wenet::FeaturePipeline>(feature_config);
   wekws::KeywordSpotting spotter(model_path);
 
-  signal(SIGINT, sig_routine);
+  signal(SIGINT, SigRoutine);
   PaError err = Pa_Initialize();
   PaStreamParameters params;
   std::cout << err << " " << Pa_GetDeviceCount() << std::endl;
@@ -79,7 +80,7 @@ int main(int argc, char* argv[]) {
   int interval = 500;
   int frames_per_buffer = 16000 / 1000 * interval;
   Pa_OpenStream(&stream, &params, NULL, 16000, frames_per_buffer, paClipOff,
-                recordCallback, NULL);
+                RecordCallback, NULL);
   Pa_StartStream(stream);
   LOG(INFO) << "=== Now recording!! Please speak into the microphone. ===";
 
@@ -87,7 +88,7 @@ int main(int argc, char* argv[]) {
   while (Pa_IsStreamActive(stream)) {
     Pa_Sleep(interval);
     std::vector<std::vector<float>> feats;
-    feature_pipeline->Read(batch_size, &feats);
+    g_feature_pipeline->Read(batch_size, &feats);
     std::vector<std::vector<float>> prob;
     spotter.Forward(feats, &prob);
     for (int t = 0; t < prob.size(); t++) {
