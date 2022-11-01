@@ -1,4 +1,4 @@
-# WeNet & Raspberry PI
+# WeKWS & Raspberry PI
 
 There are two ways to build the runtime binaries for Raspberry PI.
 
