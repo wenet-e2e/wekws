@@ -101,8 +101,15 @@ fi
 
 
 if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
-  python wekws/bin/export_jit.py --config $dir/config.yaml \
+  jit_model=$(basename $score_checkpoint | sed -e 's:.pt$:.zip:g')
+  onnx_model=$(basename $score_checkpoint | sed -e 's:.pt$:.onnx:g')
+  python wekws/bin/export_jit.py \
+    --config $dir/config.yaml \
     --checkpoint $score_checkpoint \
-    --output_file $dir/final.zip \
-    --output_quant_file $dir/final.quant.zip
+    --jit_model $dir/$jit_model
+
+  python wekws/bin/export_onnx.py \
+    --config $dir/config.yaml \
+    --checkpoint $score_checkpoint \
+    --onnx_model $dir/$onnx_model
 fi
