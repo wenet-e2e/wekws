@@ -28,13 +28,14 @@ dataset_conf:
 model:
     hidden_dim: 32
     preprocessing:
-        type: none
+        type: linear
     backbone:
         type: mdtc
         num_stack: 3
         stack_size: 4
         kernel_size: 5
         hidden_dim: 32
+        causal: True
 
 optim: adam
 optim_conf:

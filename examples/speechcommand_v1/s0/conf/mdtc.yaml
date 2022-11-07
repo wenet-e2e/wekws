@@ -28,14 +28,14 @@ dataset_conf:
 model:
     hidden_dim: 64
     preprocessing:
-        type: none
+        type: linear
     backbone:
         type: mdtc
         num_stack: 4
         stack_size: 4
         kernel_size: 5
         hidden_dim: 64
-        causal: False
+        causal: True
     classifier:
         type: global
         dropout: 0.5
