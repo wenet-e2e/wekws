@@ -131,7 +131,7 @@ def init_model(configs):
         causal = configs['backbone']['causal']
         backbone = MDTC(num_stack,
                         stack_size,
-                        input_dim,
+                        hidden_dim,
                         hidden_dim,
                         kernel_size,
                         causal=causal)

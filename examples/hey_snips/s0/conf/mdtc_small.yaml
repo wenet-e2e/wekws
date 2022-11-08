@@ -28,7 +28,7 @@ dataset_conf:
 model:
     hidden_dim: 32
     preprocessing:
-        type: none
+        type: linear
     backbone:
         type: mdtc
         num_stack: 3
