@@ -124,7 +124,6 @@ class TCN(nn.Module):
                  dropout: float = 0.1,
                  block_class=CnnBlock):
         super().__init__()
-        layers = []
         self.padding = 0
         self.network = nn.ModuleList()
         for i in range(num_layers):
