@@ -112,8 +112,8 @@ def main():
     cv_conf['spec_aug'] = False
     cv_conf['shuffle'] = False
 
-    train_dataset = Dataset(args.train_data, 
-                            train_conf, 
+    train_dataset = Dataset(args.train_data,
+                            train_conf,
                             reverb_lmdb=args.reverb_lmdb,
                             noise_lmdb=args.noise_lmdb)
     cv_dataset = Dataset(args.cv_data, cv_conf)
