@@ -20,6 +20,8 @@ num_average=30
 score_checkpoint=$dir/avg_${num_average}.pt
 
 download_dir=./data/local # your data dir
+noise_lmdb=
+reverb_lmdb=
 
 . tools/parse_options.sh || exit 1;
 
@@ -78,6 +80,8 @@ if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
     --min_duration 50 \
     --seed 777 \
     $cmvn_opts \
+    ${reverb_lmdb:+--reverb_lmdb $reverb_lmdb} \
+    ${noise_lmdb:+--noise_lmdb $noise_lmdb} \
     ${checkpoint:+--checkpoint $checkpoint}
 fi
 
