@@ -113,7 +113,7 @@ class DataList(IterableDataset):
             yield data
 
 
-def Dataset(data_list_file, conf, 
+def Dataset(data_list_file, conf,
             partition=True,
             reverb_lmdb=None,
             noise_lmdb=None):
