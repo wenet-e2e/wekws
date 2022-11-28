@@ -5,6 +5,8 @@ dataset_conf:
     resample_conf:
         resample_rate: 16000
     speed_perturb: false
+    reverb_prob: 0.2
+    noise_prob: 0.3
     feature_extraction_conf:
         feature_type: 'fbank'
         num_mel_bins: 40

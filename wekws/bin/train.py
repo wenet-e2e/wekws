@@ -77,6 +77,12 @@ def get_args():
                         default=100,
                         type=int,
                         help='prefetch number')
+    parser.add_argument('--reverb_lmdb',
+                        default=None,
+                        help='reverb lmdb file')
+    parser.add_argument('--noise_lmdb',
+                        default=None,
+                        help='noise lmdb file')
 
     args = parser.parse_args()
     return args
@@ -106,7 +112,10 @@ def main():
     cv_conf['spec_aug'] = False
     cv_conf['shuffle'] = False
 
-    train_dataset = Dataset(args.train_data, train_conf)
+    train_dataset = Dataset(args.train_data,
+                            train_conf,
+                            reverb_lmdb=args.reverb_lmdb,
+                            noise_lmdb=args.noise_lmdb)
     cv_dataset = Dataset(args.cv_data, cv_conf)
 
     train_data_loader = DataLoader(train_dataset,
