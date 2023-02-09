@@ -33,8 +33,6 @@ class Executor:
         epoch = args.get('epoch', 0)
         min_duration = args.get('min_duration', 0)
 
-        num_total_batch = 0
-        total_loss = 0.0
         for batch_idx, batch in enumerate(data_loader):
             key, feats, target, feats_lengths = batch
             feats = feats.to(device)
