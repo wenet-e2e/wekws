@@ -71,7 +71,7 @@ Please scan the QR code on the right to join the chat group.
 
 * Mining Effective Negative Training Samples for Keyword Spotting
   ([github]( https://github.com/jingyonghou/KWS_Max-pooling_RHE),
-   [paper](http://lxie.nwpu-aslp.org/papers/2020ICASSP_HJY.pdf))
+   [paper](https://www.microsoft.com/en-us/research/uploads/prod/2020/04/ICASSP2020_Max_pooling_KWS.pdf))
 * Max-pooling Loss Training of Long Short-term Memory Networks for Small-footprint Keyword Spotting
   ([paper](https://arxiv.org/pdf/1705.02411.pdf))
 * A depthwise separable convolutional neural network for keyword spotting on an embedded system
