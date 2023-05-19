@@ -34,17 +34,20 @@ class Executor:
         min_duration = args.get('min_duration', 0)
 
         for batch_idx, batch in enumerate(data_loader):
-            key, feats, target, feats_lengths = batch
+            key, feats, target, feats_lengths, label_lengths = batch
             feats = feats.to(device)
             target = target.to(device)
             feats_lengths = feats_lengths.to(device)
+            label_lengths = label_lengths.to(device)
             num_utts = feats_lengths.size(0)
             if num_utts == 0:
                 continue
             logits, _ = model(feats)
             loss_type = args.get('criterion', 'max_pooling')
             loss, acc = criterion(loss_type, logits, target, feats_lengths,
-                                  min_duration)
+                                  target_lengths=label_lengths,
+                                  min_duration=min_duration,
+                                  validation=False)
             optimizer.zero_grad()
             loss.backward()
             grad_norm = clip_grad_norm_(model.parameters(), clip)
@@ -67,16 +70,20 @@ class Executor:
         total_acc = 0.0
         with torch.no_grad():
             for batch_idx, batch in enumerate(data_loader):
-                key, feats, target, feats_lengths = batch
+                key, feats, target, feats_lengths, label_lengths = batch
                 feats = feats.to(device)
                 target = target.to(device)
                 feats_lengths = feats_lengths.to(device)
+                label_lengths = label_lengths.to(device)
                 num_utts = feats_lengths.size(0)
                 if num_utts == 0:
                     continue
                 logits, _ = model(feats)
                 loss, acc = criterion(args.get('criterion', 'max_pooling'),
-                                      logits, target, feats_lengths)
+                                      logits, target, feats_lengths,
+                                      target_lengths=label_lengths,
+                                      min_duration=0,
+                                      validation=True)
                 if torch.isfinite(loss):
                     num_seen_utts += num_utts
                     total_loss += loss.item() * num_utts

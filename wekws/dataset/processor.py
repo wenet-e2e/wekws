@@ -302,12 +302,24 @@ def padding(data):
             [sample[i]['feat'].size(0) for i in order], dtype=torch.int32)
         sorted_feats = [sample[i]['feat'] for i in order]
         sorted_keys = [sample[i]['key'] for i in order]
-        sorted_labels = torch.tensor([sample[i]['label'] for i in order],
-                                     dtype=torch.int64)
         padded_feats = pad_sequence(sorted_feats,
                                     batch_first=True,
                                     padding_value=0)
-        yield (sorted_keys, padded_feats, sorted_labels, feats_lengths)
+
+        if isinstance(sample[0]['label'], int):
+            padded_labels = torch.tensor([sample[i]['label'] for i in order],
+                                     dtype=torch.int32)
+            label_lengths = torch.tensor([1 for i in order],
+                                         dtype=torch.int32)
+        else:
+            sorted_labels = [
+                torch.tensor(sample[i]['label'], dtype=torch.int32) for i in order
+            ]
+            label_lengths = torch.tensor([len(sample[i]['label']) for i in order],
+                                         dtype=torch.int32)
+            padded_labels = pad_sequence(
+                sorted_labels, batch_first=True, padding_value=-1)
+        yield (sorted_keys, padded_feats, padded_labels, feats_lengths, label_lengths)
 
 
 def add_reverb(data, reverb_source, aug_prob):

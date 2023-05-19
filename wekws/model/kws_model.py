@@ -162,6 +162,16 @@ def init_model(configs):
         classifier = LinearClassifier(hidden_dim, output_dim)
         activation = nn.Sigmoid()
 
+    # Here we add a possible "activation_type", one can choose to use other activation function.
+    # We use nn.Identity just for CTC loss
+    if "activation" in configs:
+        activation_type = configs["activation"]["type"]
+        if activation_type == 'identity':
+            activation = nn.Identity()
+        else:
+            print('Unknown activation type {}'.format(activation_type))
+            sys.exit(1)
+
     kws_model = KWSModel(input_dim, output_dim, hidden_dim, global_cmvn,
                          preprocessing, backbone, classifier, activation)
     return kws_model
