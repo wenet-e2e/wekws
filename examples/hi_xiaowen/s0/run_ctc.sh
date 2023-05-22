@@ -1,6 +1,6 @@
 #!/bin/bash
 # Copyright 2021  Binbin Zhang(binbzha@qq.com)
-#           2023  dujing(thuduj12@163.com)
+#           2023  Jing Du(thuduj12@163.com)
 
 . ./path.sh
 
@@ -29,9 +29,6 @@ trainbase=true
 trainbase_dir=data/base
 trainbase_config=conf/ds_tcn_ctc_base.yaml
 trainbase_exp=exp/base
-if $trainbase; then
-  checkpoint=$trainbase_exp/final.pt
-fi
 
 if [ ${stage} -le -3 ] && [ ${stop_stage} -ge -3 ]; then
   echo "Download and extracte all datasets"
@@ -131,7 +128,8 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ] && [ $trainbase == true ]; then
       --num_keywords $num_keywords \
       --min_duration 50 \
       --seed 666 \
-      $cmvn_opts
+      $cmvn_opts \
+      --checkpoint $trainbase_exp/23.pt
 fi
 
 if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
@@ -141,6 +139,18 @@ if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
   $norm_mean && cmvn_opts="--cmvn_file data/train/global_cmvn"
   $norm_var && cmvn_opts="$cmvn_opts --norm_var"
   num_gpus=$(echo $gpus | awk -F ',' '{print NF}')
+
+  if $trainbase; then
+    echo "Use the base model you trained as checkpoint: $trainbase_exp/final.pt"
+    checkpoint=$trainbase_exp/final.pt
+  else
+    echo "Use the base model trained with WenetSpeech as checkpoint: mobvoi_kws_transcription/final.pt"
+    if [ ! -d mobvoi_kws_transcription ] ;then
+      git clone https://www.modelscope.cn/datasets/thuduj12/mobvoi_kws_transcription.git
+    fi
+    checkpoint=mobvoi_kws_transcription/final.pt
+  fi
+
   torchrun --standalone --nnodes=1 --nproc_per_node=$num_gpus \
     wekws/bin/train.py --gpus $gpus \
       --config $config \
@@ -176,7 +186,7 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     --lexicon_file data/lexicon.txt
 
   python wekws/bin/compute_det_ctc.py \
-      --keyword 嗨小问,你好问问 \
+      --keywords 嗨小问,你好问问 \
       --test_data data/test/data.list \
       --window_shift $window_shift \
       --step 0.001  \
