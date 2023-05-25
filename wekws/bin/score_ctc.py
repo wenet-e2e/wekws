@@ -192,10 +192,10 @@ def main():
                 if hit_keyword is not None:
                     # fout.write('{} detected [{:.2f} {:.2f}] {} {:.3f}\n'\
                     #          .format(key, start*0.03, end*0.03, hit_keyword, hit_score))
-                    fout.write('{} {} {:.3f}\n'.format(
+                    fout.write('{} detected {} {:.3f}\n'.format(
                         key, hit_keyword, hit_score))
                 else:
-                    fout.write('{} -1 -1\n'.format(key))
+                    fout.write('{} rejected\n'.format(key))
 
             if batch_idx % 10 == 0:
                 print('Progress batch {}'.format(batch_idx))

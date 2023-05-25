@@ -44,7 +44,7 @@ optim_conf:
 
 training_config:
     grad_clip: 5
-    max_epoch: 30
+    max_epoch: 50
     log_interval: 100
     criterion: ctc
 

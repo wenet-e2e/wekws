@@ -17,7 +17,7 @@
 import argparse, logging, glob
 import json, re, os, numpy as np
 import matplotlib.pyplot as plt
-import pypinyin
+import pypinyin  # for Chinese Character
 
 def split_mixed_label(input_str):
     tokens = []
@@ -165,13 +165,13 @@ if __name__ == '__main__':
     parser.add_argument(
         '--xlim',
         type=int,
-        default=5,
+        default=10,
         help='xlim：range of x-axis, x is false alarm per hour')
     parser.add_argument('--x_step', type=int, default=1, help='step on x-axis')
     parser.add_argument(
         '--ylim',
         type=int,
-        default=75,
+        default=100,
         help='ylim：range of y-axis, y is false rejection rate')
     parser.add_argument('--y_step', type=int, default=5, help='step on y-axis')
 
@@ -228,7 +228,7 @@ if __name__ == '__main__':
                 false_alarm_rate = num_false_alarm / filler_num
 
                 fout.write('{:.3f} {:.6f} {:.6f}\n'.format(
-                    threshold, false_alarm_per_hour, threshold))
+                    threshold, false_alarm_per_hour, false_reject_rate))
                 threshold += args.step
     if args.det_curve_path :
         det_curve_path = args.det_curve_path
