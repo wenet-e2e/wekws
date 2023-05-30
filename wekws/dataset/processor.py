@@ -263,6 +263,51 @@ def shuffle(data, shuffle_size=1000):
     for x in buf:
         yield x
 
+def context_expansion(data, left=1, right=1):
+    """ expand left and right frames
+        Args:
+            data: Iterable[{key, feat, label}]
+            left (int): feature left context frames
+            right (int): feature right context frames
+
+        Returns:
+            data: Iterable[{key, feat, label}]
+    """
+    for sample in data:
+        index = 0
+        feats = sample['feat']
+        ctx_dim = feats.shape[0]
+        ctx_frm = feats.shape[1] * (left + right + 1)
+        feats_ctx = torch.zeros(ctx_dim, ctx_frm, dtype=torch.float32)
+        for lag in range(-left, right + 1):
+            feats_ctx[:, index:index + feats.shape[1]] = torch.roll(
+                feats, -lag, 0)
+            index = index + feats.shape[1]
+
+        # replication pad left margin
+        for idx in range(left):
+            for cpx in range(left - idx):
+                feats_ctx[idx, cpx * feats.shape[1]:(cpx + 1)
+                          * feats.shape[1]] = feats_ctx[left, :feats.shape[1]]
+
+        feats_ctx = feats_ctx[:feats_ctx.shape[0] - right]
+        sample['feat'] = feats_ctx
+        yield sample
+
+
+def frame_skip(data, skip_rate=1):
+    """ skip frame
+        Args:
+            data: Iterable[{key, feat, label}]
+            skip_rate (int): take every N-frames for model input
+
+        Returns:
+            data: Iterable[{key, feat, label}]
+    """
+    for sample in data:
+        feats_skip = sample['feat'][::skip_rate, :]
+        sample['feat'] = feats_skip
+        yield sample
 
 def batch(data, batch_size=16):
     """ Static batch the data by `batch_size`

@@ -1,4 +1,5 @@
 # Copyright (c) 2021 Binbin Zhang
+#               2023 Jing Du
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,7 +26,8 @@ from wekws.model.subsampling import (LinearSubsampling1, Conv1dSubsampling1,
                                      NoSubsampling)
 from wekws.model.tcn import TCN, CnnBlock, DsCnnBlock
 from wekws.model.mdtc import MDTC
-from wekws.utils.cmvn import load_cmvn
+from wekws.utils.cmvn import load_cmvn, load_kaldi_cmvn
+from wekws.model.fsmn import FSMN
 
 
 class KWSModel(nn.Module):
@@ -80,7 +82,10 @@ class KWSModel(nn.Module):
 def init_model(configs):
     cmvn = configs.get('cmvn', {})
     if 'cmvn_file' in cmvn and cmvn['cmvn_file'] is not None:
-        mean, istd = load_cmvn(cmvn['cmvn_file'])
+        if "kaldi" in cmvn['cmvn_file']:
+            mean, istd = load_kaldi_cmvn(cmvn['cmvn_file'])
+        else:
+            mean, istd = load_cmvn(cmvn['cmvn_file'])
         global_cmvn = GlobalCMVN(
             torch.from_numpy(mean).float(),
             torch.from_numpy(istd).float(),
@@ -135,6 +140,20 @@ def init_model(configs):
                         hidden_dim,
                         kernel_size,
                         causal=causal)
+    elif backbone_type == 'fsmn':
+        input_affine_dim = configs['backbone']['input_affine_dim']
+        num_layers = configs['backbone']['num_layers']
+        linear_dim = configs['backbone']['linear_dim']
+        proj_dim = configs['backbone']['proj_dim']
+        left_order = configs['backbone']['left_order']
+        right_order = configs['backbone']['right_order']
+        left_stride = configs['backbone']['left_stride']
+        right_stride = configs['backbone']['right_stride']
+        output_affine_dim = configs['backbone']['output_affine_dim']
+        backbone = FSMN(input_dim, input_affine_dim, num_layers, linear_dim,
+                        proj_dim, left_order, right_order, left_stride,
+                        right_stride, output_affine_dim, output_dim)
+
     else:
         print('Unknown body type {}'.format(backbone_type))
         sys.exit(1)
@@ -154,6 +173,8 @@ def init_model(configs):
             # last means we use last frame to do backpropagation, so the model
             # can be infered streamingly
             classifier = LastClassifier(classifier_base)
+        elif classifier_type == 'identity':
+            classifier = nn.Identity()
         else:
             print('Unknown classifier type {}'.format(classifier_type))
             sys.exit(1)

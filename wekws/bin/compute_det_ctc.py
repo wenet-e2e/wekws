@@ -165,13 +165,13 @@ if __name__ == '__main__':
     parser.add_argument(
         '--xlim',
         type=int,
-        default=10,
+        default=5,
         help='xlim：range of x-axis, x is false alarm per hour')
     parser.add_argument('--x_step', type=int, default=1, help='step on x-axis')
     parser.add_argument(
         '--ylim',
         type=int,
-        default=100,
+        default=35,
         help='ylim：range of y-axis, y is false rejection rate')
     parser.add_argument('--y_step', type=int, default=5, help='step on y-axis')
 

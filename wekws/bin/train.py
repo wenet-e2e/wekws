@@ -134,7 +134,8 @@ def main():
     output_dim = args.num_keywords
 
     # Write model_dir/config.yaml for inference and export
-    configs['model']['input_dim'] = input_dim
+    if 'input_dim' not in configs['model']:
+        configs['model']['input_dim'] = input_dim
     configs['model']['output_dim'] = output_dim
     if args.cmvn_file is not None:
         configs['model']['cmvn'] = {}

@@ -1,0 +1,64 @@
+dataset_conf:
+    filter_conf:
+        max_length: 2048
+        min_length: 0
+    resample_conf:
+        resample_rate: 16000
+    speed_perturb: false
+    feature_extraction_conf:
+        feature_type: 'fbank'
+        num_mel_bins: 80
+        frame_shift: 10
+        frame_length: 25
+        dither: 1.
+    context_expansion: true
+    context_expansion_conf:
+        left: 2
+        right: 2
+    frame_skip: 3
+    spec_aug: true
+    spec_aug_conf:
+        num_t_mask: 1
+        num_f_mask: 1
+        max_t: 20
+        max_f: 10
+    shuffle: true
+    shuffle_conf:
+        shuffle_size: 1500
+    batch_conf:
+        batch_size: 256
+
+model:
+    input_dim: 400
+    preprocessing:
+        type: none
+    hidden_dim: 128
+    backbone:
+        type: fsmn
+        input_affine_dim: 140
+        num_layers: 4
+        linear_dim: 250
+        proj_dim: 128
+        left_order: 10
+        right_order: 2
+        left_stride: 1
+        right_stride: 1
+        output_affine_dim: 140
+    classifier:
+        type: identity
+        dropout: 0.1
+    activation:
+        type: identity
+
+
+optim: adam
+optim_conf:
+    lr: 0.001
+    weight_decay: 0.0001
+
+training_config:
+    grad_clip: 5
+    max_epoch: 80
+    log_interval: 10
+    criterion: ctc
+

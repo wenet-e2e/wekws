@@ -8,13 +8,13 @@ stage=$1
 stop_stage=$2
 num_keywords=2599
 
-config=conf/ds_tcn_ctc.yaml
+config=conf/fsmn_ctc.yaml
 norm_mean=true
 norm_var=true
 gpus="0"
 
 checkpoint=
-dir=exp/ds_tcn_ctc
+dir=exp/fsmn_ctc
 average_model=true
 num_average=30
 if $average_model ;then
@@ -28,19 +28,13 @@ download_dir=/mnt/52_disk/back/DuJing/data/nihaowenwen # your data dir
 . tools/parse_options.sh || exit 1;
 window_shift=50
 
-#Whether to train base model. If set true, must put train+dev data in trainbase_dir
-trainbase=false
-trainbase_dir=data/base
-trainbase_config=conf/ds_tcn_ctc_base.yaml
-trainbase_exp=exp/base
-
-if [ ${stage} -le -3 ] && [ ${stop_stage} -ge -3 ]; then
+if [ ${stage} -le -2 ] && [ ${stop_stage} -ge -2 ]; then
   echo "Download and extracte all datasets"
   local/mobvoi_data_download.sh --dl_dir $download_dir
 fi
 
 
-if [ ${stage} -le -2 ] && [ ${stop_stage} -ge -2 ]; then
+if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
   echo "Preparing datasets..."
   mkdir -p dict
   echo "<filler> -1" > dict/words.txt
@@ -61,7 +55,7 @@ if [ ${stage} -le -2 ] && [ ${stop_stage} -ge -2 ]; then
   done
 fi
 
-if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
+if [ ${stage} -le -0 ] && [ ${stop_stage} -ge -0 ]; then
 # Here we Use Paraformer Large(https://www.modelscope.cn/models/damo/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-pytorch/summary)
 # to transcribe the negative wavs, and upload the transcription to modelscope.
   git clone https://www.modelscope.cn/datasets/thuduj12/mobvoi_kws_transcription.git
@@ -79,7 +73,7 @@ if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
 
 fi
 
-if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
+if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
   echo "Compute CMVN and Format datasets"
   tools/compute_cmvn_stats.py --num_workers 16 --train_config $config \
     --in_scp data/train/wav.scp \
@@ -96,65 +90,22 @@ if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
   done
 fi
 
-if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ] && [ $trainbase == true ]; then
-  for x in train dev ; do
-    if [ ! -f $trainbase_dir/$x/wav.scp ] || [ ! -f $trainbase_dir/$x/text ]; then
-      echo "If You Want to Train Base KWS-CTC Model, You Should Prepare ASR Data by Yourself."
-      echo "The wav.scp and text in KALDI-format is Needed, You Should Put Them in $trainbase_dir/$x"
-      exit
-    fi
-    if [ ! -f $trainbase_dir/$x/wav.dur ]; then
-      tools/wav_to_duration.sh --nj 128 $trainbase_dir/$x/wav.scp $trainbase_dir/$x/wav.dur
-    fi
-
-    # Here we use tokens.txt and lexicon.txt to convert txt into index
-    if [ ! -f $trainbase_dir/$x/data.list ]; then
-      tools/make_list.py $trainbase_dir/$x/wav.scp $trainbase_dir/$x/text \
-          $trainbase_dir/$x/wav.dur $trainbase_dir/$x/data.list  \
-          --token_file data/tokens.txt \
-          --lexicon_file data/lexicon.txt
-    fi
-  done
-
-  echo "Start base training ..."
-  mkdir -p $trainbase_exp
-  cmvn_opts=
-  $norm_mean && cmvn_opts="--cmvn_file data/train/global_cmvn"
-  $norm_var && cmvn_opts="$cmvn_opts --norm_var"
-  num_gpus=$(echo $gpus | awk -F ',' '{print NF}')
-  torchrun --standalone --nnodes=1 --nproc_per_node=$num_gpus \
-    wekws/bin/train.py --gpus $gpus \
-      --config $trainbase_config \
-      --train_data $trainbase_dir/train/data.list \
-      --cv_data $trainbase_dir/dev/data.list \
-      --model_dir $trainbase_exp \
-      --num_workers 2 \
-      --ddp.dist_backend nccl \
-      --num_keywords $num_keywords \
-      --min_duration 50 \
-      --seed 666 \
-      $cmvn_opts # \
-      #--checkpoint $trainbase_exp/23.pt
-fi
-
 if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
+
+  echo "Use the base model from modelscope"
+  if [ ! -d speech_charctc_kws_phone-xiaoyun ] ;then
+      git lfs install
+      git clone https://www.modelscope.cn/damo/speech_charctc_kws_phone-xiaoyun.git
+  fi
+  checkpoint=speech_charctc_kws_phone-xiaoyun/train/base.pt
+  cp speech_charctc_kws_phone-xiaoyun/train/feature_transform.txt.80dim-l2r2 data/global_cmvn.kaldi
+
   echo "Start training ..."
   mkdir -p $dir
   cmvn_opts=
-  $norm_mean && cmvn_opts="--cmvn_file data/train/global_cmvn"
+  $norm_mean && cmvn_opts="--cmvn_file data/global_cmvn.kaldi"
   $norm_var && cmvn_opts="$cmvn_opts --norm_var"
   num_gpus=$(echo $gpus | awk -F ',' '{print NF}')
-
-  if $trainbase; then
-    echo "Use the base model you trained as checkpoint: $trainbase_exp/final.pt"
-    checkpoint=$trainbase_exp/final.pt
-  else
-    echo "Use the base model trained with WenetSpeech as checkpoint: mobvoi_kws_transcription/23.pt"
-    if [ ! -d mobvoi_kws_transcription ] ;then
-      git clone https://www.modelscope.cn/datasets/thuduj12/mobvoi_kws_transcription.git
-    fi
-    checkpoint=mobvoi_kws_transcription/23.pt    # this ckpt may not be the best.
-  fi
 
   torchrun --standalone --nnodes=1 --nproc_per_node=$num_gpus \
     wekws/bin/train.py --gpus $gpus \
