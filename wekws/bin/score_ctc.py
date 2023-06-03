@@ -169,7 +169,7 @@ def main():
                                               keywords_idxset)
                 hit_keyword = None
                 hit_score = 1.0
-                # start = 0; end = 0
+                start = 0; end = 0
                 for one_hyp in hyps:
                     prefix_ids = one_hyp[0]
                     # path_score = one_hyp[1]
@@ -180,8 +180,8 @@ def main():
                         offset = is_sublist(prefix_ids, lab)
                         if offset != -1:
                             hit_keyword = word
-                            # start = prefix_nodes[offset]['frame']
-                            # end = prefix_nodes[offset+len(lab)-1]['frame']
+                            start = prefix_nodes[offset]['frame']
+                            end = prefix_nodes[offset+len(lab)-1]['frame']
                             for idx in range(offset, offset + len(lab)):
                                 hit_score *= prefix_nodes[idx]['prob']
                             break
@@ -190,12 +190,13 @@ def main():
                         break
 
                 if hit_keyword is not None:
-                    # fout.write('{} detected [{:.2f} {:.2f}] {} {:.3f}\n'\
-                    #          .format(key, start*0.03, end*0.03, hit_keyword, hit_score))
-                    fout.write('{} detected {} {:.3f}\n'.format(
-                        key, hit_keyword, hit_score))
+                    fout.write('{} detected {} {:.3f}\n'.format(key, hit_keyword, hit_score))
+                    logging.info(
+                        f"batch:{batch_idx}_{i} detect {hit_keyword} in {key} from {start} to {end} frame. "
+                        f"duration {end-start}, score {hit_score}, Activated.")
                 else:
                     fout.write('{} rejected\n'.format(key))
+                    logging.info(f"batch:{batch_idx}_{i} {key} Deactivated.")
 
             if batch_idx % 10 == 0:
                 print('Progress batch {}'.format(batch_idx))

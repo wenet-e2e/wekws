@@ -1,4 +1,5 @@
 # Copyright (c) 2021 Binbin Zhang
+#               2023 Jing Du
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -276,8 +277,10 @@ def ctc_prefix_beam_search(
                     n_pb, n_pnb, nodes = next_hyps[n_prefix]
                     if nodes:
                         if ps > nodes[-1]['prob']:  # update frame and prob
-                            nodes[-1]['prob'] = ps
-                            nodes[-1]['frame'] = t
+                            # nodes[-1]['prob'] = ps
+                            # nodes[-1]['frame'] = t
+                            nodes.pop()    # to avoid change other beam which has this node.
+                            nodes.append(dict(token=s, frame=t, prob=ps))
                     else:
                         nodes = cur_nodes.copy()
                         nodes.append(dict(token=s, frame=t,

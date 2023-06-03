@@ -41,6 +41,9 @@ def main():
         configs = yaml.load(fin, Loader=yaml.FullLoader)
     feature_dim = configs['model']['input_dim']
     model = init_model(configs['model'])
+    if configs['training_config']['criterion'] == 'ctc':
+        # if we use ctc_loss, the logits need to be convert into probs before ctc_prefix_beam_search
+        model.forward = model.forward_softmax
     print(model)
 
     load_checkpoint(model, args.checkpoint)

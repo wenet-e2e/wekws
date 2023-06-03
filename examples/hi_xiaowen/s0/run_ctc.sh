@@ -153,7 +153,7 @@ if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
     if [ ! -d mobvoi_kws_transcription ] ;then
       git clone https://www.modelscope.cn/datasets/thuduj12/mobvoi_kws_transcription.git
     fi
-    checkpoint=mobvoi_kws_transcription/23.pt    # this ckpt may not be the best.
+    checkpoint=mobvoi_kws_transcription/23.pt    # this ckpt may not converge well.
   fi
 
   torchrun --standalone --nnodes=1 --nproc_per_node=$num_gpus \
@@ -181,7 +181,12 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
   fi
   result_dir=$dir/test_$(basename $score_checkpoint)
   mkdir -p $result_dir
-  python wekws/bin/score_ctc.py \
+  stream=true  # we detect keyword online with ctc_prefix_beam_search
+  score_prefix=""
+  if $stream ; then
+    score_prefix=stream_
+  fi
+  python wekws/bin/${score_prefix}score_ctc.py \
     --config $dir/config.yaml \
     --test_data data/test/data.list \
     --gpu 0  \
