@@ -106,7 +106,7 @@ def main():
     score_abs_path = os.path.abspath(args.score_file)
     with torch.no_grad(), open(score_abs_path, 'w', encoding='utf8') as fout:
         for batch_idx, batch in enumerate(test_data_loader):
-            keys, feats, target, lengths = batch
+            keys, feats, target, lengths, target_lengths = batch
             feats = feats.to(device)
             lengths = lengths.to(device)
             logits, _ = model(feats)

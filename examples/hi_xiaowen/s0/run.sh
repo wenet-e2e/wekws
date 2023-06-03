@@ -3,8 +3,8 @@
 
 . ./path.sh
 
-stage=0
-stop_stage=4
+stage=$1
+stop_stage=$2
 num_keywords=2
 
 config=conf/ds_tcn.yaml
@@ -98,6 +98,7 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
   python wekws/bin/score.py \
     --config $dir/config.yaml \
     --test_data data/test/data.list \
+    --gpu 0 \
     --batch_size 256 \
     --checkpoint $score_checkpoint \
     --score_file $result_dir/score.txt  \
