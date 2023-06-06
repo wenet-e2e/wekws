@@ -2,6 +2,7 @@
 FSMN implementation.
 
 Copyright: 2022-03-09 yueyue.nyy
+           2023       Jing Du
 '''
 
 from typing import Tuple
@@ -39,11 +40,15 @@ class LinearTransform(nn.Module):
         self.dequant = torch.quantization.DeQuantStub()
 
     def forward(self, input):
+        if isinstance(input, tuple):
+            input, in_cache = input
+        else:
+            in_cache = None
         output = self.quant(input)
         output = self.linear(output)
         output = self.dequant(output)
 
-        return output
+        return (output, in_cache)
 
     def to_kaldi_net(self):
         re_str = ''
@@ -98,11 +103,15 @@ class AffineTransform(nn.Module):
         self.dequant = torch.quantization.DeQuantStub()
 
     def forward(self, input):
+        if isinstance(input, tuple):
+            input, in_cache = input
+        else:
+            in_cache = None
         output = self.quant(input)
         output = self.linear(output)
         output = self.dequant(output)
 
-        return output
+        return (output, in_cache)
 
     def to_kaldi_net(self):
         re_str = ''
@@ -205,17 +214,29 @@ class FSMNBlock(nn.Module):
         self.dequant = torch.quantization.DeQuantStub()
 
     def forward(self, input):
+        if isinstance(input, tuple):
+            input, in_cache = input
+        else :
+            in_cache = None
         x = torch.unsqueeze(input, 1)
         x_per = x.permute(0, 3, 2, 1)
 
-        y_left = F.pad(x_per, [0, 0, (self.lorder - 1) * self.lstride, 0])
+        if in_cache is None  or len(in_cache)==0 or in_cache[0]==None:
+            x_pad = F.pad(x_per, [0, 0, (self.lorder - 1) * self.lstride+self.rorder*self.rstride, 0])
+        else :
+            in_cache = in_cache.to(x_per.device)
+            x_pad = torch.cat((in_cache, x_per), dim=2)
+        in_cache = x_pad[:, :, -((self.lorder - 1) * self.lstride+self.rorder*self.rstride):, :]
+        y_left = x_pad[:, :, :-self.rorder * self.rstride, :]
         y_left = self.quant(y_left)
         y_left = self.conv_left(y_left)
         y_left = self.dequant(y_left)
-        out = x_per + y_left
+        out =  x_pad[:, :, (self.lorder - 1) * self.lstride:-self.rorder * self.rstride, :] + y_left
 
+        #out = out[:, :, :-self.rorder*self.rstride, :]
         if self.conv_right is not None:
-            y_right = F.pad(x_per, [0, 0, 0, (self.rorder) * self.rstride])
+            # y_right = F.pad(x_per, [0, 0, 0, (self.rorder) * self.rstride])
+            y_right = x_pad[:, :, -(x_per.size(2)+self.rorder*self.rstride):, :]
             y_right = y_right[:, :, self.rstride:, :]
             y_right = self.quant(y_right)
             y_right = self.conv_right(y_right)
@@ -225,7 +246,7 @@ class FSMNBlock(nn.Module):
         out_per = out.permute(0, 3, 2, 1)
         output = out_per.squeeze(1)
 
-        return output
+        return (output, in_cache)
 
     def to_kaldi_net(self):
         re_str = ''
@@ -320,9 +341,13 @@ class RectifiedLinear(nn.Module):
         self.dropout = nn.Dropout(0.1)
 
     def forward(self, input):
+        if isinstance(input, tuple):
+            input, in_cache = input
+        else :
+            in_cache = None
         out = self.relu(input)
         # out = self.dropout(out)
-        return out
+        return (out, in_cache)
 
     def to_kaldi_net(self):
         re_str = ''
@@ -432,7 +457,7 @@ class FSMN(nn.Module):
     def forward(
         self,
         input: torch.Tensor,
-        in_cache: torch.Tensor = torch.zeros(0, 0, 0, dtype=torch.float)
+        in_cache  #: torch.Tensor = torch.zeros(0, 0, 0, dtype=torch.float)
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Args:
@@ -440,22 +465,22 @@ class FSMN(nn.Module):
             in_cache(torch.Tensor): (B, D, C), C is the accumulated cache size
         """
 
-        # print("FSMN forward!!!!")
-        # print(input.shape)
-        # print(input)
-        # print(self.in_linear1.input_dim)
-        # print(self.in_linear1.output_dim)
-
+        if in_cache is None or len(in_cache) == 0 or in_cache[0] == None:
+            in_cache = [None for _ in range(len(self.fsmn))]
+        input = (input, in_cache)
         x1 = self.in_linear1(input)
         x2 = self.in_linear2(x1)
         x3 = self.relu(x2)
-        x4 = self.fsmn(x3)
+        # x4 = self.fsmn(x3)
+        x4, _ = x3
+        for layer, module in enumerate(self.fsmn):
+            x4, in_cache[layer] = module((x4, in_cache[layer]))
         x5 = self.out_linear1(x4)
         x6 = self.out_linear2(x5)
         # x7 = self.softmax(x6)
-
+        x7, _ = x6
         # return x7, None
-        return x6, in_cache
+        return x7, in_cache
 
     def to_kaldi_net(self):
         re_str = ''
