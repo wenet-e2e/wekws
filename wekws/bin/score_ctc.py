@@ -19,7 +19,9 @@ from __future__ import print_function
 import argparse
 import copy
 import logging
-import os, sys, math
+import os
+import sys
+import math
 
 import torch
 import yaml
@@ -138,7 +140,7 @@ def main():
     keywords_strset = {'<blk>'}
     keywords_tokenmap = {'<blk>': 0}
     for keyword in keywords_list:
-        strs, indexes = query_token_set(keyword, token_table,lexicon_table)
+        strs, indexes = query_token_set(keyword, token_table, lexicon_table)
         keywords_token[keyword] = {}
         keywords_token[keyword]['token_id'] = indexes
         keywords_token[keyword]['token_str'] = ''.join('%s ' % str(i)
@@ -165,11 +167,11 @@ def main():
             for i in range(len(keys)):
                 key = keys[i]
                 score = logits[i][:lengths[i]]
-                hyps = ctc_prefix_beam_search(score, lengths[i],
-                                              keywords_idxset)
+                hyps = ctc_prefix_beam_search(score, lengths[i], keywords_idxset)
                 hit_keyword = None
                 hit_score = 1.0
-                start = 0; end = 0
+                start = 0
+                end = 0
                 for one_hyp in hyps:
                     prefix_ids = one_hyp[0]
                     # path_score = one_hyp[1]
@@ -181,7 +183,7 @@ def main():
                         if offset != -1:
                             hit_keyword = word
                             start = prefix_nodes[offset]['frame']
-                            end = prefix_nodes[offset+len(lab)-1]['frame']
+                            end = prefix_nodes[offset + len(lab) - 1]['frame']
                             for idx in range(offset, offset + len(lab)):
                                 hit_score *= prefix_nodes[idx]['prob']
                             break
@@ -193,7 +195,7 @@ def main():
                     fout.write('{} detected {} {:.3f}\n'.format(key, hit_keyword, hit_score))
                     logging.info(
                         f"batch:{batch_idx}_{i} detect {hit_keyword} in {key} from {start} to {end} frame. "
-                        f"duration {end-start}, score {hit_score}, Activated.")
+                        f"duration {end - start}, score {hit_score}, Activated.")
                 else:
                     fout.write('{} rejected\n'.format(key))
                     logging.info(f"batch:{batch_idx}_{i} {key} Deactivated.")

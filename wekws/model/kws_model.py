@@ -64,7 +64,7 @@ class KWSModel(nn.Module):
     def forward(
         self,
         x: torch.Tensor,
-        in_cache=None #: torch.Tensor = torch.zeros(0, 0, 0, dtype=torch.float)
+        in_cache: torch.Tensor = torch.zeros(0, 0, 0, dtype=torch.float)
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         if self.global_cmvn is not None:
             x = self.global_cmvn(x)

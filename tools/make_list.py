@@ -15,8 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse, logging
-import json, re
+import argparse
+import logging
+import json
+import re
 
 symbol_str = '[’!"#$%&\'()*+,-./:;<>=?@，。?★、…【】《》？“”‘’！[\\]^_`{|}~]+'
 
@@ -189,7 +191,7 @@ if __name__ == '__main__':
             arr = line.strip().split(maxsplit=1)
             key = arr[0]
             tokens = None
-            if token_table!=None and lexicon_table!=None :
+            if token_table is not None and lexicon_table is not None :
                 if len(arr) < 2:  # for some utterence, no text
                     txt = [1]  # the <blank>/sil is indexed by 1
                     tokens = ["sil"]
@@ -201,7 +203,7 @@ if __name__ == '__main__':
             wav = wav_table[key]
             assert key in duration_table
             duration = duration_table[key]
-            if tokens == None:
+            if tokens is None:
                 line = dict(key=key, txt=txt, duration=duration, wav=wav)
             else:
                 line = dict(key=key, tok=tokens, txt=txt, duration=duration, wav=wav)

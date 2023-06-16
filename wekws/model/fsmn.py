@@ -221,19 +221,18 @@ class FSMNBlock(nn.Module):
         x = torch.unsqueeze(input, 1)
         x_per = x.permute(0, 3, 2, 1)
 
-        if in_cache is None  or len(in_cache)==0 or in_cache[0]==None:
-            x_pad = F.pad(x_per, [0, 0, (self.lorder - 1) * self.lstride+self.rorder*self.rstride, 0])
-        else :
+        if in_cache is None or len(in_cache) == 0 or in_cache[0] is None:
+            x_pad = F.pad(x_per, [0, 0, (self.lorder - 1) * self.lstride + self.rorder * self.rstride, 0])
+        else:
             in_cache = in_cache.to(x_per.device)
             x_pad = torch.cat((in_cache, x_per), dim=2)
-        in_cache = x_pad[:, :, -((self.lorder - 1) * self.lstride+self.rorder*self.rstride):, :]
+        in_cache = x_pad[:, :, -((self.lorder - 1) * self.lstride + self.rorder * self.rstride):, :]
         y_left = x_pad[:, :, :-self.rorder * self.rstride, :]
         y_left = self.quant(y_left)
         y_left = self.conv_left(y_left)
         y_left = self.dequant(y_left)
-        out =  x_pad[:, :, (self.lorder - 1) * self.lstride:-self.rorder * self.rstride, :] + y_left
+        out = x_pad[:, :, (self.lorder - 1) * self.lstride:-self.rorder * self.rstride, :] + y_left
 
-        #out = out[:, :, :-self.rorder*self.rstride, :]
         if self.conv_right is not None:
             # y_right = F.pad(x_per, [0, 0, 0, (self.rorder) * self.rstride])
             y_right = x_pad[:, :, -(x_per.size(2)+self.rorder*self.rstride):, :]

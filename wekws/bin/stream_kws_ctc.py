@@ -15,9 +15,11 @@
 from __future__ import print_function
 
 import argparse
-import struct, wave
+import struct
+import wave
 import logging
-import os, math
+import os
+import math
 import numpy as np
 import torchaudio.compliance.kaldi as kaldi
 
@@ -183,13 +185,13 @@ def ctc_prefix_beam_search(t, probs, cur_hyps, keywords_idxset, score_beam_size)
 class KeyWordSpotter(torch.nn.Module):
     def __init__(self, ckpt_path, config_path, token_path, lexicon_path,
                  threshold, min_frames=5, max_frames=250, interval_frames=50,
-                 score_beam = 3, path_beam = 20,
+                 score_beam=3, path_beam=20,
                  gpu=-1, is_jit_model=False,):
         super().__init__()
         os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu)
         with open(config_path, 'r') as fin:
             configs = yaml.load(fin, Loader=yaml.FullLoader)
-        dataset_conf=configs['dataset_conf']
+        dataset_conf = configs['dataset_conf']
 
         # feature related
         self.sample_rate = 16000
@@ -198,7 +200,7 @@ class KeyWordSpotter(torch.nn.Module):
         self.frame_length = dataset_conf['feature_extraction_conf']['frame_length']  # in ms
         self.frame_shift = dataset_conf['feature_extraction_conf']['frame_shift']    # in ms
         self.downsampling = dataset_conf.get('frame_skip', 1)
-        self.resolution = self.frame_shift/1000 * self.downsampling   # in second
+        self.resolution = self.frame_shift / 1000 * self.downsampling   # in second
         # fsmn splice operation
         self.context_expansion = dataset_conf.get('context_expansion', False)
         self.left_context = 0
@@ -284,6 +286,7 @@ class KeyWordSpotter(torch.nn.Module):
         for i in range(0, len(wave), 2):
             value = struct.unpack('<h', wave[i:i + 2])[0]
             data.append(value)  # here we don't divide 32768.0, because kaldi.fbank accept original input
+
         wave = np.array(data)
         wave = np.append(self.wave_remained, wave)
         wave_tensor = torch.from_numpy(wave).float().to(self.device)
@@ -303,18 +306,18 @@ class KeyWordSpotter(torch.nn.Module):
         if self.context_expansion:
             assert feat_len > self.right_context, "make sure each chunk feat length is large than right context."
             # pad feats with remained feature from last chunk
-            if self.feature_remained == None: # first chunk
+            if self.feature_remained is None:  # first chunk
                 # pad first frame at the beginning, replicate just support last dimension, so we do transpose.
                 feats_pad = F.pad(feats.T, (self.left_context, 0), mode='replicate').T
             else:
-                feats_pad = torch.cat((self.feature_remained, feats) )
+                feats_pad = torch.cat((self.feature_remained, feats))
 
             ctx_frm = feats.shape[0] - self.right_context
             ctx_win = (self.left_context + self.right_context + 1)
             ctx_dim = feats.shape[1] * ctx_win
             feats_ctx = torch.zeros(ctx_frm, ctx_dim, dtype=torch.float32)
             for i in range(ctx_frm):
-                feats_ctx[i] = torch.cat(tuple(feats_pad[i: i+ctx_win])).unsqueeze(0)
+                feats_ctx[i] = torch.cat(tuple(feats_pad[i: i + ctx_win])).unsqueeze(0)
 
             # update feature remained, and feats
             self.feature_remained = feats[-self.left_context:]
@@ -322,7 +325,7 @@ class KeyWordSpotter(torch.nn.Module):
         if self.downsampling > 1:
             feats = feats[self.feature_context_offset::self.downsampling, :]
             complement = feats.size(1) % self.downsampling
-            self.feature_context_offset = complement if complement==0 else self.downsampling-complement
+            self.feature_context_offset = complement if complement == 0 else self.downsampling-complement
         return feats
 
     def decode_keywords(self, t, probs):
@@ -340,7 +343,8 @@ class KeyWordSpotter(torch.nn.Module):
     def execute_detection(self, t):
         absolute_time = t + self.total_frames
         hit_keyword = None
-        start = 0; end = 0
+        start = 0
+        end = 0
 
         # hyps for detection
         hyps = [(y[0], y[1][0] + y[1][1], y[1][2]) for y in self.cur_hyps]
@@ -385,8 +389,8 @@ class KeyWordSpotter(torch.nn.Module):
         self.result = {
             "state": 1 if self.activated else 0,
             "keyword": hit_keyword if self.activated else None,
-            "start": start*self.resolution if self.activated else None,
-            "end": end*self.resolution if self.activated else None,
+            "start": start * self.resolution if self.activated else None,
+            "end": end * self.resolution if self.activated else None,
             "score": self.hit_score if self.activated else None
         }
 

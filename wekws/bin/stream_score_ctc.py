@@ -19,7 +19,9 @@ from __future__ import print_function
 import argparse
 import copy
 import logging
-import os, sys, math
+import os
+import sys
+import math
 
 import torch
 import yaml
@@ -197,7 +199,8 @@ def main():
                 hit_keyword = None
                 activated = False
                 hit_score = 1.0
-                start = 0;  end = 0
+                start = 0
+                end = 0
 
                 # 2. CTC beam search step by step
                 for t in range(0, maxlen):
@@ -298,7 +301,7 @@ def main():
                             break
 
                     duration = end - start
-                    if hit_keyword is not None :
+                    if hit_keyword is not None:
                         if hit_score >= args.threshold and args.min_frames <= duration <= args.max_frames:
                             activated = True
                             fout.write('{} detected {} {:.3f}\n'.format( key, hit_keyword, hit_score))

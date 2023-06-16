@@ -14,7 +14,8 @@
 # limitations under the License.
 
 import json
-import math,re
+import math
+import re
 
 import numpy as np
 

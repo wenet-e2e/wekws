@@ -14,8 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse, logging, glob
-import json, re, os, numpy as np
+import argparse
+import logging
+import glob
+import json
+import re
+import os
+import numpy as np
 import matplotlib.pyplot as plt
 import pypinyin  # for Chinese Character
 
@@ -205,8 +210,7 @@ if __name__ == '__main__':
                 num_false_reject = 0
                 num_true_detect = 0
                 # transverse the all keyword_table
-                for key, confi in keyword_filler_table[keyword][
-                    'keyword_table'].items():
+                for key, confi in keyword_filler_table[keyword]['keyword_table'].items():
                     if confi < threshold:
                         num_false_reject += 1
                     else:

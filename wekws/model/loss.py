@@ -13,10 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import torch, math, sys
+import torch
+import math
+import sys
 import torch.nn.functional as F
 from collections import defaultdict
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 from wekws.utils.mask import padding_mask
 

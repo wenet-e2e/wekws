@@ -353,7 +353,7 @@ def padding(data):
 
         if isinstance(sample[0]['label'], int):
             padded_labels = torch.tensor([sample[i]['label'] for i in order],
-                                     dtype=torch.int32)
+                                         dtype=torch.int32)
             label_lengths = torch.tensor([1 for i in order],
                                          dtype=torch.int32)
         else:
