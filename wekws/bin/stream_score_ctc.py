@@ -44,11 +44,11 @@ def get_args():
                         help='gpu id for this rank, -1 for cpu')
     parser.add_argument('--checkpoint', required=True, help='checkpoint model')
     parser.add_argument('--batch_size',
-                        default=16,
+                        default=1,
                         type=int,
                         help='batch size for inference')
     parser.add_argument('--num_workers',
-                        default=0,
+                        default=1,
                         type=int,
                         help='num of subprocess workers for reading')
     parser.add_argument('--pin_memory',
@@ -131,6 +131,8 @@ def main():
     test_conf['feature_extraction_conf']['dither'] = 0.0
     test_conf['batch_conf']['batch_size'] = args.batch_size
 
+    downsampling_factor = test_conf.get('frame_skip', 1)
+
     test_dataset = Dataset(args.test_data, test_conf)
     test_data_loader = DataLoader(test_dataset,
                                   batch_size=None,
@@ -205,6 +207,7 @@ def main():
                 # 2. CTC beam search step by step
                 for t in range(0, maxlen):
                     probs = ctc_probs[t]  # (vocab_size,)
+                    t *= downsampling_factor   # the real time
                     # key: prefix, value (pb, pnb), default value(-inf, -inf)
                     next_hyps = defaultdict(lambda: (0.0, 0.0, []))
 

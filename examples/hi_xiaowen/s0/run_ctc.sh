@@ -203,7 +203,9 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
       --test_data data/test/data.list \
       --window_shift $window_shift \
       --step 0.001  \
-      --score_file $result_dir/score.txt
+      --score_file $result_dir/score.txt \
+      --token_file data/tokens.txt \
+      --lexicon_file data/lexicon.txt
 fi
 
 

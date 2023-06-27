@@ -377,6 +377,8 @@ def add_reverb(data, reverb_source, aug_prob):
             rir_io = io.BytesIO(rir_data)
             _, rir_audio = wavfile.read(rir_io)
             rir_audio = rir_audio.astype(np.float32)
+            if len(rir_audio.shape) > 1:
+                rir_audio = rir_audio[:, 0]
             rir_audio = rir_audio / np.sqrt(np.sum(rir_audio**2))
             out_audio = signal.convolve(audio, rir_audio,
                                         mode='full')[:audio_len]
@@ -405,6 +407,8 @@ def add_noise(data, noise_source, aug_prob):
                 snr_range = [0, 15]
             _, noise_audio = wavfile.read(io.BytesIO(noise_data))
             noise_audio = noise_audio.astype(np.float32)
+            if len(noise_audio.shape) > 1:
+                noise_audio = noise_audio[:, 0]
             if noise_audio.shape[0] > audio_len:
                 start = random.randint(0, noise_audio.shape[0] - audio_len)
                 noise_audio = noise_audio[start:start + audio_len]

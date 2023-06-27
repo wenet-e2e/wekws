@@ -154,17 +154,21 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
       --test_data data/test/data.list \
       --window_shift $window_shift \
       --step 0.001  \
-      --score_file $result_dir/score.txt
+      --score_file $result_dir/score.txt \
+      --token_file data/tokens.txt \
+      --lexicon_file data/lexicon.txt
 fi
 
 
 if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
-  jit_model=$(basename $score_checkpoint | sed -e 's:.pt$:.zip:g')
+# NOTE: FSMN now is not support export to jit, beacuse of nn.Sequential with tuple input
+# This issue is in https://stackoverflow.com/questions/75714299/pytorch-jit-script-error-when-sequential-container-takes-a-tuple-input/76553450#76553450
+#  jit_model=$(basename $score_checkpoint | sed -e 's:.pt$:.zip:g')
+#  python wekws/bin/export_jit.py \
+#    --config $dir/config.yaml \
+#    --checkpoint $score_checkpoint \
+#    --jit_model $dir/$jit_model
   onnx_model=$(basename $score_checkpoint | sed -e 's:.pt$:.onnx:g')
-  python wekws/bin/export_jit.py \
-    --config $dir/config.yaml \
-    --checkpoint $score_checkpoint \
-    --jit_model $dir/$jit_model
   python wekws/bin/export_onnx.py \
     --config $dir/config.yaml \
     --checkpoint $score_checkpoint \

@@ -39,11 +39,12 @@ class LinearTransform(nn.Module):
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()
 
-    def forward(self, input):
+    def forward(self,
+                input: Tuple[torch.Tensor, torch.Tensor]):
         if isinstance(input, tuple):
             input, in_cache = input
         else:
-            in_cache = None
+            in_cache = torch.zeros(0, 0, 0, 0, dtype=torch.float)
         output = self.quant(input)
         output = self.linear(output)
         output = self.dequant(output)
@@ -102,11 +103,12 @@ class AffineTransform(nn.Module):
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()
 
-    def forward(self, input):
+    def forward(self,
+                input: Tuple[torch.Tensor, torch.Tensor]):
         if isinstance(input, tuple):
             input, in_cache = input
         else:
-            in_cache = None
+            in_cache = torch.zeros(0, 0, 0, 0, dtype=torch.float)
         output = self.quant(input)
         output = self.linear(output)
         output = self.dequant(output)
@@ -213,15 +215,16 @@ class FSMNBlock(nn.Module):
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()
 
-    def forward(self, input):
+    def forward(self,
+                input: Tuple[torch.Tensor, torch.Tensor] ):
         if isinstance(input, tuple):
             input, in_cache = input
         else :
-            in_cache = None
+            in_cache = torch.zeros(0, 0, 0, 0, dtype=torch.float)
         x = torch.unsqueeze(input, 1)
         x_per = x.permute(0, 3, 2, 1)
 
-        if in_cache is None or len(in_cache) == 0 or in_cache[0] is None:
+        if in_cache is None or len(in_cache) == 0 :
             x_pad = F.pad(x_per, [0, 0, (self.lorder - 1) * self.lstride + self.rorder * self.rstride, 0])
         else:
             in_cache = in_cache.to(x_per.device)
@@ -339,11 +342,12 @@ class RectifiedLinear(nn.Module):
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(0.1)
 
-    def forward(self, input):
+    def forward(self,
+                input: Tuple[torch.Tensor, torch.Tensor]):
         if isinstance(input, tuple):
             input, in_cache = input
         else :
-            in_cache = None
+            in_cache = torch.zeros(0, 0, 0, 0, dtype=torch.float)
         out = self.relu(input)
         # out = self.dropout(out)
         return (out, in_cache)
@@ -456,7 +460,7 @@ class FSMN(nn.Module):
     def forward(
         self,
         input: torch.Tensor,
-        in_cache  #: torch.Tensor = torch.zeros(0, 0, 0, dtype=torch.float)
+        in_cache: torch.Tensor = torch.zeros(0, 0, 0, dtype=torch.float)
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Args:
@@ -464,8 +468,8 @@ class FSMN(nn.Module):
             in_cache(torch.Tensor): (B, D, C), C is the accumulated cache size
         """
 
-        if in_cache is None or len(in_cache) == 0 or in_cache[0] == None:
-            in_cache = [None for _ in range(len(self.fsmn))]
+        if in_cache is None or len(in_cache) == 0 :
+            in_cache = [torch.zeros(0, 0, 0, 0, dtype=torch.float) for _ in range(len(self.fsmn))]
         input = (input, in_cache)
         x1 = self.in_linear1(input)
         x2 = self.in_linear2(x1)

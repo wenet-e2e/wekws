@@ -23,6 +23,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pypinyin  # for Chinese Character
+from tools.make_list import query_token_set, read_lexicon, read_token
 
 def split_mixed_label(input_str):
     tokens = []
@@ -43,7 +44,7 @@ def space_mixed_label(input_str):
     space_str = ''.join(f'{sub} ' for sub in splits)
     return space_str.strip()
 
-def load_label_and_score(keywords_list, label_file, score_file):
+def load_label_and_score(keywords_list, label_file, score_file, true_keywords):
     score_table = {}
     with open(score_file, 'r', encoding='utf8') as fin:
         # read score file and store in table
@@ -52,10 +53,11 @@ def load_label_and_score(keywords_list, label_file, score_file):
             key = arr[0]
             is_detected = arr[1]
             if is_detected == 'detected':
+                keyword=true_keywords[arr[2]]
                 if key not in score_table:
                     score_table.update({
                         key: {
-                            'kw': space_mixed_label(arr[2]),
+                            'kw': space_mixed_label(keyword),
                             'confi': float(arr[3])
                         }
                     })
@@ -72,6 +74,7 @@ def load_label_and_score(keywords_list, label_file, score_file):
     # build empty structure for keyword-filler infos
     keyword_filler_table = {}
     for keyword in keywords_list:
+        keyword = true_keywords[keyword]
         keyword = space_mixed_label(keyword)
         keyword_filler_table[keyword] = {}
         keyword_filler_table[keyword]['keyword_table'] = {}
@@ -93,6 +96,7 @@ def load_label_and_score(keywords_list, label_file, score_file):
         assert key in score_table
 
         for keyword in keywords_list:
+            keyword = true_keywords[keyword]
             keyword = space_mixed_label(keyword)
             keyword_regstr_lrblk = ' ' + keyword + ' '
             if txt_regstr_lrblk.find(keyword_regstr_lrblk) != -1:
@@ -154,6 +158,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='compute det curve')
     parser.add_argument('--test_data', required=True, help='label file')
     parser.add_argument('--keywords', type=str, default=None, help='keywords, split with comma(,)')
+    parser.add_argument('--token_file', type=str, default=None, help='the path of tokens.txt')
+    parser.add_argument('--lexicon_file', type=str, default=None, help='the path of lexicon.txt')
     parser.add_argument('--score_file', required=True, help='score file')
     parser.add_argument('--step', type=float, default=0.01,
                         help='threshold step')
@@ -183,9 +189,18 @@ if __name__ == '__main__':
     args = parser.parse_args()
     window_shift = args.window_shift
     keywords_list = args.keywords.strip().split(',')
-    keyword_filler_table = load_label_and_score(keywords_list, args.test_data, args.score_file)
+
+    token_table = read_token(args.token_file)
+    lexicon_table = read_lexicon(args.lexicon_file)
+    true_keywords = {}
+    for keyword in keywords_list:
+        strs, indexes = query_token_set(keyword, token_table, lexicon_table)
+        true_keywords[keyword] = ''.join(strs)
+
+    keyword_filler_table = load_label_and_score(keywords_list, args.test_data, args.score_file, true_keywords)
 
     for keyword in keywords_list:
+        keyword = true_keywords[keyword]
         keyword = space_mixed_label(keyword)
         keyword_dur = keyword_filler_table[keyword]['keyword_duration']
         keyword_num = len(keyword_filler_table[keyword]['keyword_table'])

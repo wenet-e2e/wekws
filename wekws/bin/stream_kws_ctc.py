@@ -35,7 +35,10 @@ from tools.make_list import query_token_set, read_lexicon, read_token
 def get_args():
     parser = argparse.ArgumentParser(description='detect keywords online.')
     parser.add_argument('--config', required=True, help='config file')
-    parser.add_argument('--wav_path', required=True, help='test wave path.')
+    parser.add_argument('--wav_path', required=False, default=None, help='test wave path.')
+    parser.add_argument('--wav_scp', required=False, default=None, help='test wave scp.')
+    parser.add_argument('--result_file', required=False, default=None, help='test result.')
+
     parser.add_argument('--gpu',
                         type=int,
                         default=-1,
@@ -209,7 +212,7 @@ class KeyWordSpotter(torch.nn.Module):
             self.left_context = dataset_conf['context_expansion_conf']['left']
             self.right_context = dataset_conf['context_expansion_conf']['right']
         self.feature_remained = None
-        self.feature_context_offset = 0  # after downsample, offset exist.
+        self.feats_ctx_offset = 0  # after downsample, offset exist.
 
 
         # model related
@@ -289,6 +292,9 @@ class KeyWordSpotter(torch.nn.Module):
 
         wave = np.array(data)
         wave = np.append(self.wave_remained, wave)
+        if wave.size < (self.frame_length * self.sample_rate / 1000) * self.right_context :
+            self.wave_remained = wave
+            return None
         wave_tensor = torch.from_numpy(wave).float().to(self.device)
         wave_tensor = wave_tensor.unsqueeze(0)   # add a channel dimension
         feats = kaldi.fbank(wave_tensor,
@@ -312,7 +318,7 @@ class KeyWordSpotter(torch.nn.Module):
             else:
                 feats_pad = torch.cat((self.feature_remained, feats))
 
-            ctx_frm = feats.shape[0] - self.right_context
+            ctx_frm = feats_pad.shape[0] - (self.right_context+self.right_context)
             ctx_win = (self.left_context + self.right_context + 1)
             ctx_dim = feats.shape[1] * ctx_win
             feats_ctx = torch.zeros(ctx_frm, ctx_dim, dtype=torch.float32)
@@ -320,12 +326,13 @@ class KeyWordSpotter(torch.nn.Module):
                 feats_ctx[i] = torch.cat(tuple(feats_pad[i: i + ctx_win])).unsqueeze(0)
 
             # update feature remained, and feats
-            self.feature_remained = feats[-self.left_context:]
+            self.feature_remained = feats[-(self.left_context+self.right_context):]
             feats = feats_ctx.to(self.device)
         if self.downsampling > 1:
-            feats = feats[self.feature_context_offset::self.downsampling, :]
-            complement = feats.size(1) % self.downsampling
-            self.feature_context_offset = complement if complement == 0 else self.downsampling-complement
+            last_remainder = 0 if self.feats_ctx_offset==0 else self.downsampling-self.feats_ctx_offset
+            remainder = (feats.size(0)+last_remainder) % self.downsampling
+            feats = feats[self.feats_ctx_offset::self.downsampling, :]
+            self.feats_ctx_offset = remainder if remainder == 0 else self.downsampling-remainder
         return feats
 
     def decode_keywords(self, t, probs):
@@ -396,11 +403,14 @@ class KeyWordSpotter(torch.nn.Module):
 
     def forward(self, wave_chunk):
         feature = self.accept_wave(wave_chunk)
+        if feature is None or feature.size(0) < 1:
+            return self.result
         feature = feature.unsqueeze(0)   # add a batch dimension
         logits, self.in_cache = self.model(feature, self.in_cache)
         probs = logits.softmax(2)  # (batch_size, maxlen, vocab_size)
         probs = probs[0].cpu()   # remove batch dimension, move to cpu for ctc_prefix_beam_search
         for (t, prob) in enumerate(probs):
+            t *= self.downsampling
             self.decode_keywords(t, prob)
             self.execute_detection(t)
 
@@ -409,13 +419,22 @@ class KeyWordSpotter(torch.nn.Module):
                 # since a chunk include about 30 frames, once activated, we can jump the latter frames.
                 # TODO: there should give another method to update result, avoiding self.result being cleared.
                 break
-        self.total_frames += len(probs)  # update frame offset
+        self.total_frames += len(probs) * self.downsampling  # update frame offset
         return self.result
 
     def reset(self):
         self.cur_hyps = [(tuple(), (1.0, 0.0, []))]
         self.activated = False
         self.hit_score = 1.0
+
+    def reset_all(self):
+        self.reset()
+        self.wave_remained = np.array([])
+        self.feature_remained = None
+        self.feats_ctx_offset = 0  # after downsample, offset exist.
+        self.in_cache = torch.zeros(0, 0, 0, dtype=torch.float)
+        self.total_frames = 0   # frame offset, for absolute time
+        self.result = {}
 
 def demo():
     args = get_args()
@@ -435,22 +454,60 @@ def demo():
                          args.gpu,
                          args.jit_model)
 
-    # actually this could be done in __init__ method, we pull it outside for changing keywords.
+    # actually this could be done in __init__ method, we pull it outside for changing keywords more freely.
     kws.set_keywords(args.keywords)
 
-    # Caution: input WAV should be standard 16k, 16 bits, 1 channel
-    # In demo we read wave in non-streaming fashion.
-    with wave.open(args.wav_path, 'rb') as fin:
-        assert fin.getnchannels() == 1
-        wav = fin.readframes(fin.getnframes())
+    if args.wav_path:
+        # Caution: input WAV should be standard 16k, 16 bits, 1 channel
+        # In demo we read wave in non-streaming fashion.
+        with wave.open(args.wav_path, 'rb') as fin:
+            assert fin.getnchannels() == 1
+            wav = fin.readframes(fin.getnframes())
 
-    # We inference every 0.3 seconds, in streaming fashion.
-    interval = int(0.3 * 16000) * 2
-    for i in range(0, len(wav), interval):
-        chunk_wav = wav[i: min(i + interval, len(wav))]
-        result = kws.forward(chunk_wav)
-        print(result)
+        # We inference every 0.3 seconds, in streaming fashion.
+        interval = int(0.3 * 16000) * 2
+        for i in range(0, len(wav), interval):
+            chunk_wav = wav[i: min(i + interval, len(wav))]
+            result = kws.forward(chunk_wav)
+            print(result)
 
+    fout = None
+    if args.result_file:
+        fout = open(args.result_file, 'w', encoding='utf-8')
+
+    if args.wav_scp:
+        with open(args.wav_scp, 'r') as fscp:
+            for line in fscp:
+                line = line.strip().split()
+                assert len(line) == 2, f"The scp should be in kaldi format: \"utt_name wav_path\", but got {line}"
+
+                utt_name, wav_path = line[0], line[1]
+                with wave.open(wav_path, 'rb') as fin:
+                    assert fin.getnchannels() == 1
+                    wav = fin.readframes(fin.getnframes())
+
+                kws.reset_all()
+                activated = False
+
+                # We inference every 0.3 seconds, in streaming fashion.
+                interval = int(0.3 * 16000) * 2
+                for i in range(0, len(wav), interval):
+                    chunk_wav = wav[i: min(i + interval, len(wav))]
+                    result = kws.forward(chunk_wav)
+                    if 'state' in result and result['state'] == 1:
+                        activated = True
+                        if fout:
+                            hit_keyword = result['keyword']
+                            hit_score = result['score']
+                            fout.write('{} detected {} {:.3f}\n'.format(utt_name, hit_keyword, hit_score))
+
+                if not activated:
+                    if fout:
+                        fout.write('{} rejected\n'.format(utt_name))
+
+
+    if fout:
+        fout.close()
 
 if __name__ == '__main__':
     demo()
