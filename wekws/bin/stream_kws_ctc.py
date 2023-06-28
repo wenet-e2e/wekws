@@ -203,7 +203,7 @@ class KeyWordSpotter(torch.nn.Module):
         self.frame_length = dataset_conf['feature_extraction_conf']['frame_length']  # in ms
         self.frame_shift = dataset_conf['feature_extraction_conf']['frame_shift']    # in ms
         self.downsampling = dataset_conf.get('frame_skip', 1)
-        self.resolution = self.frame_shift / 1000 * self.downsampling   # in second
+        self.resolution = self.frame_shift / 1000    # in second
         # fsmn splice operation
         self.context_expansion = dataset_conf.get('context_expansion', False)
         self.left_context = 0
