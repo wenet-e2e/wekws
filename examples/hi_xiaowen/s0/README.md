@@ -60,3 +60,8 @@ The actual FRR will be lower than the DET curve gives in a given threshold.
 On some small data KWS tasks, we believe the FSMN-CTC model is more robust
 compared with the classification model using CE/Max-pooling loss.
 For more infomation and results of FSMN-CTC KWS model, you can click [modelscope](https://modelscope.cn/models/damo/speech_charctc_kws_phone-wenwen/summary).
+
+For realtime CTC-KWS, we should process wave input on streaming-fashion,
+include feature extraction, keyword decoding and detection and some postprocessing.
+Here is a [demo](https://modelscope.cn/studios/thuduj12/KWS_Nihao_Xiaojing/summary) in python,
+the core code is in wekws/bin/stream_kws_ctc.py, you can refer it to implement the runtime code.
