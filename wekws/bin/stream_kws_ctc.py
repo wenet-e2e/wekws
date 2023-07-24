@@ -16,7 +16,8 @@ from __future__ import print_function
 
 import argparse
 import struct
-import wave
+#import wave
+import librosa
 import logging
 import os
 import math
@@ -35,9 +36,12 @@ from tools.make_list import query_token_set, read_lexicon, read_token
 def get_args():
     parser = argparse.ArgumentParser(description='detect keywords online.')
     parser.add_argument('--config', required=True, help='config file')
-    parser.add_argument('--wav_path', required=False, default=None, help='test wave path.')
-    parser.add_argument('--wav_scp', required=False, default=None, help='test wave scp.')
-    parser.add_argument('--result_file', required=False, default=None, help='test result.')
+    parser.add_argument('--wav_path', required=False,
+                        default=None, help='test wave path.')
+    parser.add_argument('--wav_scp', required=False,
+                        default=None, help='test wave scp.')
+    parser.add_argument('--result_file', required=False,
+                        default=None, help='test result.')
 
     parser.add_argument('--gpu',
                         type=int,
@@ -48,21 +52,27 @@ def get_args():
                         action='store_true',
                         default=False,
                         help='Use pinned memory buffers used for reading')
-    parser.add_argument('--keywords', type=str, default=None, help='the keywords, split with comma(,)')
-    parser.add_argument('--token_file', type=str, default=None, help='the path of tokens.txt')
-    parser.add_argument('--lexicon_file', type=str, default=None, help='the path of lexicon.txt')
+    parser.add_argument('--keywords', type=str, default=None,
+                        help='the keywords, split with comma(,)')
+    parser.add_argument('--token_file', type=str, default=None,
+                        help='the path of tokens.txt')
+    parser.add_argument('--lexicon_file', type=str, default=None,
+                        help='the path of lexicon.txt')
     parser.add_argument('--score_beam_size',
                         default=3,
                         type=int,
-                        help='The first prune beam, filter out those frames with low scores.')
+                        help='The first prune beam, '
+                             'filter out those frames with low scores.')
     parser.add_argument('--path_beam_size',
                         default=20,
                         type=int,
-                        help='The second prune beam, keep only path_beam_size candidates.')
+                        help='The second prune beam, '
+                             'keep only path_beam_size candidates.')
     parser.add_argument('--threshold',
                         type=float,
                         default=0.0,
-                        help='The threshold of kws. If ctc_search probs exceed this value,'
+                        help='The threshold of kws. '
+                             'If ctc_search probs exceed this value,'
                              'the keyword will be activated.')
     parser.add_argument('--min_frames',
                         default=5,
@@ -98,16 +108,22 @@ def is_sublist(main_list, check_list):
     else:
         return -1
 
-def ctc_prefix_beam_search(t, probs, cur_hyps, keywords_idxset, score_beam_size):
+def ctc_prefix_beam_search(t, probs,
+                           cur_hyps,
+                           keywords_idxset,
+                           score_beam_size):
     '''
 
     :param t: the time in frame
     :param probs: the probability in t_th frame, (vocab_size, )
     :param cur_hyps: list of tuples. [(tuple(), (1.0, 0.0, []))]
-                in tuple, 1st is prefix id, 2nd include p_blank, p_non_blank, and path nodes list.
-                in path nodes list, each node is a dict of {token=idx, frame=t, prob=ps}
+                in tuple, 1st is prefix id, 2nd include p_blank,
+                p_non_blank, and path nodes list.
+                in path nodes list, each node is
+                a dict of {token=idx, frame=t, prob=ps}
     :param keywords_idxset: the index of keywords in token.txt
-    :param score_beam_size: the probability threshold, to filter out those frames with low probs.
+    :param score_beam_size: the probability threshold,
+                to filter out those frames with low probs.
     :return:
             next_hyps: the hypothesis depend on current hyp and current frame.
     '''
@@ -170,7 +186,8 @@ def ctc_prefix_beam_search(t, probs, cur_hyps, keywords_idxset, score_beam_size)
                     if ps > nodes[-1]['prob']:  # update frame and prob
                         # nodes[-1]['prob'] = ps
                         # nodes[-1]['frame'] = t
-                        nodes.pop()  # to avoid change other beam which has this node.
+                        nodes.pop()
+                        # to avoid change other beam which has this node.
                         nodes.append(dict(token=s, frame=t, prob=ps))
                 else:
                     nodes = cur_nodes.copy()
@@ -199,11 +216,14 @@ class KeyWordSpotter(torch.nn.Module):
         # feature related
         self.sample_rate = 16000
         self.wave_remained = np.array([])
-        self.num_mel_bins = dataset_conf['feature_extraction_conf']['num_mel_bins']
-        self.frame_length = dataset_conf['feature_extraction_conf']['frame_length']  # in ms
-        self.frame_shift = dataset_conf['feature_extraction_conf']['frame_shift']    # in ms
+        self.num_mel_bins = dataset_conf[
+            'feature_extraction_conf']['num_mel_bins']
+        self.frame_length = dataset_conf[
+            'feature_extraction_conf']['frame_length']  # in ms
+        self.frame_shift = dataset_conf[
+            'feature_extraction_conf']['frame_shift']    # in ms
         self.downsampling = dataset_conf.get('frame_skip', 1)
-        self.resolution = self.frame_shift / 1000    # in second
+        self.resolution = self.frame_shift / 1000   # in second
         # fsmn splice operation
         self.context_expansion = dataset_conf.get('context_expansion', False)
         self.left_context = 0
@@ -231,9 +251,11 @@ class KeyWordSpotter(torch.nn.Module):
         self.model.eval()
         logging.info(f'model {ckpt_path} loaded.')
         self.token_table = read_token(token_path)
-        logging.info(f'tokens {token_path} with {len(self.token_table)} units loaded.')
+        logging.info(f'tokens {token_path} with '
+                     f'{len(self.token_table)} units loaded.')
         self.lexicon_table = read_lexicon(lexicon_path)
-        logging.info(f'lexicons {lexicon_path} with {len(self.lexicon_table)} units loaded.')
+        logging.info(f'lexicons {lexicon_path} with '
+                     f'{len(self.lexicon_table)} units loaded.')
         self.in_cache = torch.zeros(0, 0, 0, dtype=torch.float)
 
 
@@ -257,7 +279,9 @@ class KeyWordSpotter(torch.nn.Module):
 
     def set_keywords(self, keywords):
         # 4. parse keywords tokens
-        assert keywords is not None, 'at least one keyword is needed, multiple keywords should be splitted with comma(,)'
+        assert keywords is not None, \
+            'at least one keyword is needed, ' \
+            'multiple keywords should be splitted with comma(,)'
         keywords_str = keywords
         keywords_list = keywords_str.strip().replace(' ', '').split(',')
         keywords_token = {}
@@ -265,7 +289,8 @@ class KeyWordSpotter(torch.nn.Module):
         keywords_strset = {'<blk>'}
         keywords_tokenmap = {'<blk>': 0}
         for keyword in keywords_list:
-            strs, indexes = query_token_set(keyword, self.token_table, self.lexicon_table)
+            strs, indexes = query_token_set(
+                keyword, self.token_table, self.lexicon_table)
             keywords_token[keyword] = {}
             keywords_token[keyword]['token_id'] = indexes
             keywords_token[keyword]['token_str'] = ''.join('%s ' % str(i)
@@ -284,16 +309,20 @@ class KeyWordSpotter(torch.nn.Module):
         self.keywords_token = keywords_token
 
     def accept_wave(self, wave):
-        assert isinstance(wave, bytes), "please make sure the input format is bytes(raw PCM)"
+        assert isinstance(wave, bytes), \
+            "please make sure the input format is bytes(raw PCM)"
         # convert bytes into float32
         data = []
         for i in range(0, len(wave), 2):
             value = struct.unpack('<h', wave[i:i + 2])[0]
-            data.append(value)  # here we don't divide 32768.0, because kaldi.fbank accept original input
+            data.append(value)
+            # here we don't divide 32768.0,
+            # because kaldi.fbank accept original input
 
         wave = np.array(data)
         wave = np.append(self.wave_remained, wave)
-        if wave.size < (self.frame_length * self.sample_rate / 1000) * self.right_context :
+        if wave.size < (self.frame_length * self.sample_rate / 1000) \
+                * self.right_context :
             self.wave_remained = wave
             return None
         wave_tensor = torch.from_numpy(wave).float().to(self.device)
@@ -311,29 +340,37 @@ class KeyWordSpotter(torch.nn.Module):
         self.wave_remained = wave[feat_len * frame_shift:]
 
         if self.context_expansion:
-            assert feat_len > self.right_context, "make sure each chunk feat length is large than right context."
+            assert feat_len > self.right_context, \
+                "make sure each chunk feat length is large than right context."
             # pad feats with remained feature from last chunk
             if self.feature_remained is None:  # first chunk
-                # pad first frame at the beginning, replicate just support last dimension, so we do transpose.
-                feats_pad = F.pad(feats.T, (self.left_context, 0), mode='replicate').T
+                # pad first frame at the beginning,
+                # replicate just support last dimension, so we do transpose.
+                feats_pad = F.pad(
+                    feats.T, (self.left_context, 0), mode='replicate').T
             else:
                 feats_pad = torch.cat((self.feature_remained, feats))
 
-            ctx_frm = feats_pad.shape[0] - (self.right_context+self.right_context)
+            ctx_frm = feats_pad.shape[0] - \
+                      (self.right_context+self.right_context)
             ctx_win = (self.left_context + self.right_context + 1)
             ctx_dim = feats.shape[1] * ctx_win
             feats_ctx = torch.zeros(ctx_frm, ctx_dim, dtype=torch.float32)
             for i in range(ctx_frm):
-                feats_ctx[i] = torch.cat(tuple(feats_pad[i: i + ctx_win])).unsqueeze(0)
+                feats_ctx[i] = torch.cat(
+                    tuple(feats_pad[i: i + ctx_win])).unsqueeze(0)
 
             # update feature remained, and feats
-            self.feature_remained = feats[-(self.left_context+self.right_context):]
+            self.feature_remained = \
+                feats[-(self.left_context+self.right_context):]
             feats = feats_ctx.to(self.device)
         if self.downsampling > 1:
-            last_remainder = 0 if self.feats_ctx_offset==0 else self.downsampling-self.feats_ctx_offset
+            last_remainder = 0 if self.feats_ctx_offset==0 \
+                else self.downsampling-self.feats_ctx_offset
             remainder = (feats.size(0)+last_remainder) % self.downsampling
             feats = feats[self.feats_ctx_offset::self.downsampling, :]
-            self.feats_ctx_offset = remainder if remainder == 0 else self.downsampling-remainder
+            self.feats_ctx_offset = remainder \
+                if remainder == 0 else self.downsampling-remainder
         return feats
 
     def decode_keywords(self, t, probs):
@@ -344,7 +381,8 @@ class KeyWordSpotter(torch.nn.Module):
                                            self.cur_hyps,
                                            self.keywords_idxset,
                                            self.score_beam)
-        # update cur_hyps. note: the hyps is sort by path score(pnb+pb), not the keywords' probabilities.
+        # update cur_hyps. note: the hyps is sort by path score(pnb+pb),
+        # not the keywords' probabilities.
         cur_hyps = next_hyps[:self.path_beam]
         self.cur_hyps = cur_hyps
 
@@ -381,27 +419,36 @@ class KeyWordSpotter(torch.nn.Module):
         if hit_keyword is not None:
             if self.hit_score >= self.threshold and \
                     self.min_frames <= duration <= self.max_frames \
-                    and (self.last_active_pos==-1 or end-self.last_active_pos >= self.interval_frames):
+                    and (self.last_active_pos==-1 or
+                         end-self.last_active_pos >= self.interval_frames):
                 self.activated = True
                 self.last_active_pos = end
                 logging.info(
-                    f"Frame {absolute_time} detect {hit_keyword} from {start} to {end} frame. "
+                    f"Frame {absolute_time} detect {hit_keyword} "
+                    f"from {start} to {end} frame. "
                     f"duration {duration}, score {self.hit_score}, Activated.")
 
-            elif self.last_active_pos>0 and end-self.last_active_pos < self.interval_frames:
+            elif self.last_active_pos>0 and \
+                    end-self.last_active_pos < self.interval_frames:
                 logging.info(
-                    f"Frame {absolute_time} detect {hit_keyword} from {start} to {end} frame. "
-                    f"but interval {end-self.last_active_pos} is lower than {self.interval_frames}, Deactivated. ")
+                    f"Frame {absolute_time} detect {hit_keyword} "
+                    f"from {start} to {end} frame. "
+                    f"but interval {end-self.last_active_pos} "
+                    f"is lower than {self.interval_frames}, Deactivated. ")
 
             elif self.hit_score < self.threshold:
                 logging.info(
-                    f"Frame {absolute_time} detect {hit_keyword} from {start} to {end} frame. "
-                    f"but {self.hit_score} is lower than {self.threshold}, Deactivated. ")
+                    f"Frame {absolute_time} detect {hit_keyword} "
+                    f"from {start} to {end} frame. "
+                    f"but {self.hit_score} "
+                    f"is lower than {self.threshold}, Deactivated. ")
 
             elif self.min_frames > duration or duration > self.max_frames:
                 logging.info(
-                    f"Frame {absolute_time} detect {hit_keyword} from {start} to {end} frame. "
-                    f"but {duration} beyond range({self.min_frames}~{self.max_frames}), Deactivated. ")
+                    f"Frame {absolute_time} detect {hit_keyword} "
+                    f"from {start} to {end} frame. "
+                    f"but {duration} beyond range"
+                    f"({self.min_frames}~{self.max_frames}), Deactivated. ")
 
         self.result = {
             "state": 1 if self.activated else 0,
@@ -418,7 +465,7 @@ class KeyWordSpotter(torch.nn.Module):
         feature = feature.unsqueeze(0)   # add a batch dimension
         logits, self.in_cache = self.model(feature, self.in_cache)
         probs = logits.softmax(2)  # (batch_size, maxlen, vocab_size)
-        probs = probs[0].cpu()   # remove batch dimension, move to cpu for ctc_prefix_beam_search
+        probs = probs[0].cpu()   # remove batch dimension
         for (t, prob) in enumerate(probs):
             t *= self.downsampling
             self.decode_keywords(t, prob)
@@ -426,10 +473,14 @@ class KeyWordSpotter(torch.nn.Module):
 
             if self.activated:
                 self.reset()
-                # since a chunk include about 30 frames, once activated, we can jump the latter frames.
-                # TODO: there should give another method to update result, avoiding self.result being cleared.
+                # since a chunk include about 30 frames,
+                # once activated, we can jump the latter frames.
+                # TODO: there should give another method to update result,
+                #  avoiding self.result being cleared.
                 break
-        self.total_frames += len(probs) * self.downsampling  # update frame offset
+
+        # update frame offset
+        self.total_frames += len(probs) * self.downsampling
         return self.result
 
     def reset(self):
@@ -465,15 +516,20 @@ def demo():
                          args.gpu,
                          args.jit_model)
 
-    # actually this could be done in __init__ method, we pull it outside for changing keywords more freely.
+    # actually this could be done in __init__ method,
+    # we pull it outside for changing keywords more freely.
     kws.set_keywords(args.keywords)
 
     if args.wav_path:
         # Caution: input WAV should be standard 16k, 16 bits, 1 channel
         # In demo we read wave in non-streaming fashion.
-        with wave.open(args.wav_path, 'rb') as fin:
-            assert fin.getnchannels() == 1
-            wav = fin.readframes(fin.getnframes())
+        # with wave.open(args.wav_path, 'rb') as fin:
+        #     assert fin.getnchannels() == 1
+        #     wav = fin.readframes(fin.getnframes())
+
+        y, _ = librosa.load(args.wav_path, sr=16000, mono=True)
+        # NOTE: model supports 16k sample_rate
+        wav = (y * (1 << 15)).astype("int16").tobytes()
 
         # We inference every 0.3 seconds, in streaming fashion.
         interval = int(0.3 * 16000) * 2
@@ -490,12 +546,18 @@ def demo():
         with open(args.wav_scp, 'r') as fscp:
             for line in fscp:
                 line = line.strip().split()
-                assert len(line) == 2, f"The scp should be in kaldi format: \"utt_name wav_path\", but got {line}"
+                assert len(line) == 2, \
+                    f"The scp should be in kaldi format: " \
+                    f"\"utt_name wav_path\", but got {line}"
 
                 utt_name, wav_path = line[0], line[1]
-                with wave.open(wav_path, 'rb') as fin:
-                    assert fin.getnchannels() == 1
-                    wav = fin.readframes(fin.getnframes())
+                # with wave.open(args.wav_path, 'rb') as fin:
+                #     assert fin.getnchannels() == 1
+                #     wav = fin.readframes(fin.getnframes())
+
+                y, _ = librosa.load(args.wav_path, sr=16000, mono=True)
+                # NOTE: model supports 16k sample_rate
+                wav = (y * (1 << 15)).astype("int16").tobytes()
 
                 kws.reset_all()
                 activated = False
@@ -510,7 +572,8 @@ def demo():
                         if fout:
                             hit_keyword = result['keyword']
                             hit_score = result['score']
-                            fout.write('{} detected {} {:.3f}\n'.format(utt_name, hit_keyword, hit_score))
+                            fout.write('{} detected {} {:.3f}\n'.format(
+                                utt_name, hit_keyword, hit_score))
 
                 if not activated:
                     if fout:

@@ -194,12 +194,12 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     --checkpoint $score_checkpoint \
     --score_file $result_dir/score.txt  \
     --num_workers 8  \
-    --keywords 嗨小问,你好问问 \
+    --keywords "\u55e8\u5c0f\u95ee,\u4f60\u597d\u95ee\u95ee" \
     --token_file data/tokens.txt \
     --lexicon_file data/lexicon.txt
 
   python wekws/bin/compute_det_ctc.py \
-      --keywords 嗨小问,你好问问 \
+      --keywords "\u55e8\u5c0f\u95ee,\u4f60\u597d\u95ee\u95ee" \
       --test_data data/test/data.list \
       --window_shift $window_shift \
       --step 0.001  \

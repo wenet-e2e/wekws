@@ -65,9 +65,12 @@ def get_args():
                         action='store_true',
                         default=False,
                         help='Use pinned memory buffers used for reading')
-    parser.add_argument('--keywords', type=str, default=None, help='the keywords, split with comma(,)')
-    parser.add_argument('--token_file', type=str, default=None, help='the path of tokens.txt')
-    parser.add_argument('--lexicon_file', type=str, default=None, help='the path of lexicon.txt')
+    parser.add_argument('--keywords', type=str, default=None,
+                        help='the keywords, split with comma(,)')
+    parser.add_argument('--token_file', type=str, default=None,
+                        help='the path of tokens.txt')
+    parser.add_argument('--lexicon_file', type=str, default=None,
+                        help='the path of lexicon.txt')
 
     args = parser.parse_args()
     return args
@@ -133,7 +136,9 @@ def main():
     lexicon_table = read_lexicon(args.lexicon_file)
     # 4. parse keywords tokens
     assert args.keywords is not None, 'at least one keyword is needed'
-    keywords_str = args.keywords
+    logging.info(f"keywords is {args.keywords}, "
+                 f"Chinese is converted into Unicode.")
+    keywords_str = args.keywords.encode('utf-8').decode('unicode_escape')
     keywords_list = keywords_str.strip().replace(' ', '').split(',')
     keywords_token = {}
     keywords_idxset = {0}
@@ -167,7 +172,9 @@ def main():
             for i in range(len(keys)):
                 key = keys[i]
                 score = logits[i][:lengths[i]]
-                hyps = ctc_prefix_beam_search(score, lengths[i], keywords_idxset)
+                hyps = ctc_prefix_beam_search(score,
+                                              lengths[i],
+                                              keywords_idxset)
                 hit_keyword = None
                 hit_score = 1.0
                 start = 0
@@ -192,10 +199,13 @@ def main():
                         break
 
                 if hit_keyword is not None:
-                    fout.write('{} detected {} {:.3f}\n'.format(key, hit_keyword, hit_score))
+                    fout.write('{} detected {} {:.3f}\n'.format(
+                        key, hit_keyword, hit_score))
                     logging.info(
-                        f"batch:{batch_idx}_{i} detect {hit_keyword} in {key} from {start} to {end} frame. "
-                        f"duration {end - start}, score {hit_score}, Activated.")
+                        f"batch:{batch_idx}_{i} detect {hit_keyword} "
+                        f"in {key} from {start} to {end} frame. "
+                        f"duration {end - start}, "
+                        f"score {hit_score}, Activated.")
                 else:
                     fout.write('{} rejected\n'.format(key))
                     logging.info(f"batch:{batch_idx}_{i} {key} Deactivated.")

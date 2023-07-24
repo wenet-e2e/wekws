@@ -45,7 +45,8 @@ def query_token_set(txt, symbol_table, lexicon_table):
             tokens_str = tokens_str + ('!sil', )
         elif part == '<blk>' or part == '<blank>':
             tokens_str = tokens_str + ('<blk>', )
-        elif part == '(noise)' or part == 'noise)' or part == '(noise' or part == '<noise>':
+        elif part == '(noise)' or part == 'noise)' or \
+                part == '(noise' or part == '<noise>':
             tokens_str = tokens_str + ('<GBG>', )
         elif part in symbol_table:
             tokens_str = tokens_str + (part, )
@@ -75,11 +76,11 @@ def query_token_set(txt, symbol_table, lexicon_table):
             if '<GBG>' in symbol_table:
                 tokens_idx = tokens_idx + (symbol_table['<GBG>'], )
                 logging.info(
-                    f'\'{ch}\' is not in token set, replace with <GBG>')
+                    f'{ch} is not in token set, replace with <GBG>')
             else:
                 tokens_idx = tokens_idx + (symbol_table['<blk>'], )
                 logging.info(
-                    f'\'{ch}\' is not in token set, replace with <blk>')
+                    f'{ch} is not in token set, replace with <blk>')
 
     return tokens_str, tokens_idx
 
@@ -94,7 +95,8 @@ def query_token_list(txt, symbol_table, lexicon_table):
             tokens_str.append('!sil')
         elif part == '<blk>' or part == '<blank>':
             tokens_str.append('<blk>')
-        elif part == '(noise)' or part == 'noise)' or part == '(noise' or part == '<noise>':
+        elif part == '(noise)' or part == 'noise)' or \
+                part == '(noise' or part == '<noise>':
             tokens_str.append('<GBG>')
         elif part in symbol_table:
             tokens_str.append(part)
@@ -124,11 +126,11 @@ def query_token_list(txt, symbol_table, lexicon_table):
             if '<GBG>' in symbol_table:
                 tokens_idx.append(symbol_table['<GBG>'])
                 logging.info(
-                    f'\'{ch}\' is not in token set, replace with <GBG>')
+                    f'{ch} is not in token set, replace with <GBG>')
             else:
                 tokens_idx.append(symbol_table['<blk>'])
                 logging.info(
-                    f'\'{ch}\' is not in token set, replace with <blk>')
+                    f'{ch} is not in token set, replace with <blk>')
 
     return tokens_str, tokens_idx
 
@@ -160,8 +162,10 @@ if __name__ == '__main__':
     parser.add_argument('text_file', help='text file')
     parser.add_argument('duration_file', help='duration file')
     parser.add_argument('output_file', help='output list file')
-    parser.add_argument('--token_file', type=str, default=None, help='the path of tokens.txt')
-    parser.add_argument('--lexicon_file', type=str, default=None, help='the path of lexicon.txt')
+    parser.add_argument('--token_file', type=str, default=None,
+                        help='the path of tokens.txt')
+    parser.add_argument('--lexicon_file', type=str, default=None,
+                        help='the path of lexicon.txt')
     args = parser.parse_args()
 
     wav_table = {}
@@ -196,7 +200,9 @@ if __name__ == '__main__':
                     txt = [1]  # the <blank>/sil is indexed by 1
                     tokens = ["sil"]
                 else:
-                    tokens, txt = query_token_list(arr[1], token_table, lexicon_table)
+                    tokens, txt = query_token_list(arr[1],
+                                                   token_table,
+                                                   lexicon_table)
             else:
                 txt = int(arr[1])
             assert key in wav_table
@@ -206,7 +212,8 @@ if __name__ == '__main__':
             if tokens is None:
                 line = dict(key=key, txt=txt, duration=duration, wav=wav)
             else:
-                line = dict(key=key, tok=tokens, txt=txt, duration=duration, wav=wav)
+                line = dict(key=key, tok=tokens, txt=txt,
+                            duration=duration, wav=wav)
 
             json_line = json.dumps(line, ensure_ascii=False)
             fout.write(json_line + '\n')

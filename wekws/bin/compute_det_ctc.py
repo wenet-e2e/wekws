@@ -157,18 +157,23 @@ def plot_det(dets_dir, figure_file, xlim=5, x_step=1, ylim=35, y_step=5):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='compute det curve')
     parser.add_argument('--test_data', required=True, help='label file')
-    parser.add_argument('--keywords', type=str, default=None, help='keywords, split with comma(,)')
-    parser.add_argument('--token_file', type=str, default=None, help='the path of tokens.txt')
-    parser.add_argument('--lexicon_file', type=str, default=None, help='the path of lexicon.txt')
+    parser.add_argument('--keywords', type=str, default=None,
+                        help='keywords, split with comma(,)')
+    parser.add_argument('--token_file', type=str, default=None,
+                        help='the path of tokens.txt')
+    parser.add_argument('--lexicon_file', type=str, default=None,
+                        help='the path of lexicon.txt')
     parser.add_argument('--score_file', required=True, help='score file')
     parser.add_argument('--step', type=float, default=0.01,
                         help='threshold step')
     parser.add_argument('--window_shift', type=int, default=50,
-                        help='window_shift is used to skip the frames after triggered')
+                        help='window_shift is used to '
+                             'skip the frames after triggered')
     parser.add_argument('--stats_dir',
                         required=False,
                         default=None,
-                        help='false reject/alarm stats dir, default in score_file')
+                        help='false reject/alarm stats dir, '
+                             'default in score_file')
     parser.add_argument('--det_curve_path',
                         required=False,
                         default=None,
@@ -188,7 +193,11 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     window_shift = args.window_shift
-    keywords_list = args.keywords.strip().split(',')
+    logging.info(f"keywords is {args.keywords}, "
+                 f"Chinese is converted into Unicode.")
+
+    keywords = args.keywords.encode('utf-8').decode('unicode_escape')
+    keywords_list = keywords.strip().split(',')
 
     token_table = read_token(args.token_file)
     lexicon_table = read_lexicon(args.lexicon_file)
@@ -197,7 +206,8 @@ if __name__ == '__main__':
         strs, indexes = query_token_set(keyword, token_table, lexicon_table)
         true_keywords[keyword] = ''.join(strs)
 
-    keyword_filler_table = load_label_and_score(keywords_list, args.test_data, args.score_file, true_keywords)
+    keyword_filler_table = load_label_and_score(
+        keywords_list, args.test_data, args.score_file, true_keywords)
 
     for keyword in keywords_list:
         keyword = true_keywords[keyword]
@@ -206,8 +216,10 @@ if __name__ == '__main__':
         keyword_num = len(keyword_filler_table[keyword]['keyword_table'])
         filler_dur = keyword_filler_table[keyword]['filler_duration']
         filler_num = len(keyword_filler_table[keyword]['filler_table'])
-        assert keyword_num > 0, 'Can\'t compute det for {} without positive sample'
-        assert filler_num > 0, 'Can\'t compute det for {} without negative sample'
+        assert keyword_num > 0, \
+            'Can\'t compute det for {} without positive sample'
+        assert filler_num > 0, \
+            'Can\'t compute det for {} without negative sample'
 
         logging.info('Computing det for {}'.format(keyword))
         logging.info('  Keyword duration: {} Hours, wave number: {}'.format(
@@ -218,14 +230,16 @@ if __name__ == '__main__':
             stats_dir = args.stats_dir
         else:
             stats_dir = os.path.dirname(args.score_file)
-        stats_file = os.path.join(stats_dir, 'stats.' + keyword.replace(' ', '_') + '.txt')
+        stats_file = os.path.join(
+            stats_dir, 'stats.' + keyword.replace(' ', '_') + '.txt')
         with open(stats_file, 'w', encoding='utf8') as fout:
             threshold = 0.0
             while threshold <= 1.0:
                 num_false_reject = 0
                 num_true_detect = 0
                 # transverse the all keyword_table
-                for key, confi in keyword_filler_table[keyword]['keyword_table'].items():
+                for key, confi in \
+                        keyword_filler_table[keyword]['keyword_table'].items():
                     if confi < threshold:
                         num_false_reject += 1
                     else:
@@ -253,4 +267,5 @@ if __name__ == '__main__':
         det_curve_path = args.det_curve_path
     else:
         det_curve_path = os.path.join(stats_dir, 'det.png')
-    plot_det(stats_dir, det_curve_path, args.xlim, args.x_step, args.ylim, args.y_step)
+    plot_det(stats_dir, det_curve_path,
+             args.xlim, args.x_step, args.ylim, args.y_step)

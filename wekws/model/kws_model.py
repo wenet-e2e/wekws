@@ -34,7 +34,7 @@ class KWSModel(nn.Module):
     """Our model consists of four parts:
     1. global_cmvn: Optional, (idim, idim)
     2. preprocessing: feature dimention projection, (idim, hdim)
-    3. backbone: backbone or feature extractor of the whole network, (hdim, hdim)
+    3. backbone: backbone of the whole network, (hdim, hdim)
     4. classifier: output layer or classifier of KWS model, (hdim, odim)
     5. activation:
         nn.Sigmoid for wakeup word
@@ -76,7 +76,8 @@ class KWSModel(nn.Module):
 
     def forward_softmax(self,
                         x: torch.Tensor,
-                        in_cache: torch.Tensor = torch.zeros(0, 0, 0, dtype=torch.float)
+                        in_cache: torch.Tensor = torch.zeros(
+                            0, 0, 0, dtype=torch.float)
                         ) -> Tuple[torch.Tensor, torch.Tensor]:
         if self.global_cmvn is not None:
             x = self.global_cmvn(x)
@@ -196,7 +197,8 @@ def init_model(configs):
         classifier = LinearClassifier(hidden_dim, output_dim)
         activation = nn.Sigmoid()
 
-    # Here we add a possible "activation_type", one can choose to use other activation function.
+    # Here we add a possible "activation_type",
+    # one can choose to use other activation function.
     # We use nn.Identity just for CTC loss
     if "activation" in configs:
         activation_type = configs["activation"]["type"]

@@ -66,30 +66,36 @@ def get_args():
                         action='store_true',
                         default=False,
                         help='Use pinned memory buffers used for reading')
-    parser.add_argument('--keywords', type=str, default=None, help='the keywords, split with comma(,)')
-    parser.add_argument('--token_file', type=str, default=None, help='the path of tokens.txt')
-    parser.add_argument('--lexicon_file', type=str, default=None, help='the path of lexicon.txt')
+    parser.add_argument('--keywords', type=str, default=None,
+                        help='the keywords, split with comma(,)')
+    parser.add_argument('--token_file', type=str, default=None,
+                        help='the path of tokens.txt')
+    parser.add_argument('--lexicon_file', type=str, default=None,
+                        help='the path of lexicon.txt')
     parser.add_argument('--score_beam_size',
                         default=3,
                         type=int,
-                        help='The first prune beam, filter out those frames with low scores.')
+                        help='The first prune beam, f'
+                             'ilter out those frames with low scores.')
     parser.add_argument('--path_beam_size',
                         default=20,
                         type=int,
-                        help='The second prune beam, keep only path_beam_size candidates.')
+                        help='The second prune beam, '
+                             'keep only path_beam_size candidates.')
     parser.add_argument('--threshold',
                         type=float,
                         default=0.0,
-                        help='The threshold of kws. If ctc_search probs exceed this value,'
+                        help='The threshold of kws. '
+                             'If ctc_search probs exceed this value,'
                              'the keyword will be activated.')
     parser.add_argument('--min_frames',
                         default=5,
                         type=int,
-                        help='The min frames of keyword\'s duration.')
+                        help='The min frames of keyword duration.')
     parser.add_argument('--max_frames',
                         default=250,
                         type=int,
-                        help='The max frames of keyword\'s duration.')
+                        help='The max frames of keyword duration.')
 
     args = parser.parse_args()
     return args
@@ -158,7 +164,9 @@ def main():
     lexicon_table = read_lexicon(args.lexicon_file)
     # 4. parse keywords tokens
     assert args.keywords is not None, 'at least one keyword is needed'
-    keywords_str = args.keywords
+    logging.info(f"keywords is {args.keywords}, "
+                 f"Chinese is converted into Unicode.")
+    keywords_str = args.keywords.encode('utf-8').decode('unicode_escape')
     keywords_list = keywords_str.strip().replace(' ', '').split(',')
     keywords_token = {}
     keywords_idxset = {0}
@@ -217,7 +225,8 @@ def main():
                     # filter prob score that is too small
                     filter_probs = []
                     filter_index = []
-                    for prob, idx in zip(top_k_probs.tolist(), top_k_index.tolist()):
+                    for prob, idx in zip(
+                            top_k_probs.tolist(), top_k_index.tolist()):
                         if keywords_idxset is not None:
                             if prob > 0.05 and idx in keywords_idxset:
                                 filter_probs.append(prob)
@@ -246,7 +255,8 @@ def main():
                                     n_pb, n_pnb, nodes = next_hyps[prefix]
                                     n_pnb = n_pnb + pnb * ps
                                     nodes = cur_nodes.copy()
-                                    if ps > nodes[-1]['prob']:  # update frame and prob
+                                    # update frame and prob
+                                    if ps > nodes[-1]['prob']:
                                         nodes[-1]['prob'] = ps
                                         nodes[-1]['frame'] = t
                                     next_hyps[prefix] = (n_pb, n_pnb, nodes)
@@ -257,32 +267,37 @@ def main():
                                     n_pb, n_pnb, nodes = next_hyps[n_prefix]
                                     n_pnb = n_pnb + pb * ps
                                     nodes = cur_nodes.copy()
-                                    nodes.append(dict(token=s, frame=t,
-                                                      prob=ps))  # to record token prob
+                                    nodes.append(dict(
+                                        token=s, frame=t, prob=ps))
                                     next_hyps[n_prefix] = (n_pb, n_pnb, nodes)
                             else:
                                 n_prefix = prefix + (s,)
                                 n_pb, n_pnb, nodes = next_hyps[n_prefix]
                                 if nodes:
-                                    if ps > nodes[-1]['prob']:  # update frame and prob
+                                    # update frame and prob
+                                    if ps > nodes[-1]['prob']:
                                         # nodes[-1]['prob'] = ps
                                         # nodes[-1]['frame'] = t
-                                        nodes.pop()    # to avoid change other beam which has this node.
-                                        nodes.append(dict(token=s, frame=t, prob=ps))
+                                        # avoid change other beam has this node.
+                                        nodes.pop()
+                                        nodes.append(dict(
+                                            token=s, frame=t, prob=ps))
                                 else:
                                     nodes = cur_nodes.copy()
-                                    nodes.append(dict(token=s, frame=t,
-                                                      prob=ps))  # to record token prob
+                                    nodes.append(dict(
+                                        token=s, frame=t, prob=ps))
                                 n_pnb = n_pnb + pb * ps + pnb * ps
                                 next_hyps[n_prefix] = (n_pb, n_pnb, nodes)
 
                     # 2.2 Second beam prune
                     next_hyps = sorted(
-                        next_hyps.items(), key=lambda x: (x[1][0] + x[1][1]), reverse=True)
+                        next_hyps.items(),
+                        key=lambda x: (x[1][0] + x[1][1]), reverse=True)
 
                     cur_hyps = next_hyps[:args.path_beam_size]
 
-                    hyps = [(y[0], y[1][0] + y[1][1], y[1][2]) for y in cur_hyps]
+                    hyps = [(y[0], y[1][0] + y[1][1], y[1][2])
+                            for y in cur_hyps]
 
                     for one_hyp in hyps:
                         prefix_ids = one_hyp[0]
@@ -295,7 +310,8 @@ def main():
                             if offset != -1:
                                 hit_keyword = word
                                 start = prefix_nodes[offset]['frame']
-                                end = prefix_nodes[offset + len(lab) - 1]['frame']
+                                end = prefix_nodes[
+                                    offset + len(lab) - 1]['frame']
                                 for idx in range(offset, offset + len(lab)):
                                     hit_score *= prefix_nodes[idx]['prob']
                                 break
@@ -305,25 +321,35 @@ def main():
 
                     duration = end - start
                     if hit_keyword is not None:
-                        if hit_score >= args.threshold and args.min_frames <= duration <= args.max_frames:
+                        if hit_score >= args.threshold and \
+                                args.min_frames <= duration <= args.max_frames:
                             activated = True
-                            fout.write('{} detected {} {:.3f}\n'.format( key, hit_keyword, hit_score))
+                            fout.write('{} detected {} {:.3f}\n'.format(
+                                key, hit_keyword, hit_score))
                             logging.info(
-                                f"batch:{batch_idx}_{i} detect {hit_keyword} in {key} from {start} to {end} frame. "
-                                f"duration {duration}, score {hit_score} Activated.")
+                                f"batch:{batch_idx}_{i} detect {hit_keyword} "
+                                f"in {key} from {start} to {end} frame. "
+                                f"duration {duration}, s"
+                                f"core {hit_score} Activated.")
 
-                            # clear the ctc_prefix buffer, and clear hit_keyword
+                            # clear the ctc_prefix buffer, and hit_keyword
                             cur_hyps = [(tuple(), (1.0, 0.0, []))]
                             hit_keyword = None
                             hit_score = 1.0
                         elif hit_score < args.threshold:
                             logging.info(
-                                f"batch:{batch_idx}_{i} detect {hit_keyword} in {key} from {start} to {end} frame. "
-                                f"but {hit_score} less than {args.threshold}, Deactivated. ")
-                        elif args.min_frames > duration or duration > args.max_frames:
+                                f"batch:{batch_idx}_{i} detect {hit_keyword} "
+                                f"in {key} from {start} to {end} frame. "
+                                f"but {hit_score} less than "
+                                f"{args.threshold}, Deactivated. ")
+                        elif args.min_frames > duration \
+                                or duration > args.max_frames:
                             logging.info(
-                                f"batch:{batch_idx}_{i} detect {hit_keyword} in {key} from {start} to {end} frame. "
-                                f"but {duration} beyond range({args.min_frames}~{args.max_frames}), Deactivated. ")
+                                f"batch:{batch_idx}_{i} detect {hit_keyword} "
+                                f"in {key} from {start} to {end} frame. "
+                                f"but {duration} beyond "
+                                f"range({args.min_frames}~{args.max_frames}), "
+                                f"Deactivated. ")
                 if not activated:
                     fout.write('{} rejected\n'.format(key))
                     logging.info(f"batch:{batch_idx}_{i} {key} Deactivated.")

@@ -225,16 +225,19 @@ class FSMNBlock(nn.Module):
         x_per = x.permute(0, 3, 2, 1)
 
         if in_cache is None or len(in_cache) == 0 :
-            x_pad = F.pad(x_per, [0, 0, (self.lorder - 1) * self.lstride + self.rorder * self.rstride, 0])
+            x_pad = F.pad(x_per, [0, 0, (self.lorder - 1) * self.lstride
+                                  + self.rorder * self.rstride, 0])
         else:
             in_cache = in_cache.to(x_per.device)
             x_pad = torch.cat((in_cache, x_per), dim=2)
-        in_cache = x_pad[:, :, -((self.lorder - 1) * self.lstride + self.rorder * self.rstride):, :]
+        in_cache = x_pad[:, :, -((self.lorder - 1) * self.lstride
+                                 + self.rorder * self.rstride):, :]
         y_left = x_pad[:, :, :-self.rorder * self.rstride, :]
         y_left = self.quant(y_left)
         y_left = self.conv_left(y_left)
         y_left = self.dequant(y_left)
-        out = x_pad[:, :, (self.lorder - 1) * self.lstride:-self.rorder * self.rstride, :] + y_left
+        out = x_pad[:, :, (self.lorder - 1) * self.lstride:
+                          -self.rorder * self.rstride, :] + y_left
 
         if self.conv_right is not None:
             # y_right = F.pad(x_per, [0, 0, 0, (self.rorder) * self.rstride])
@@ -253,7 +256,8 @@ class FSMNBlock(nn.Module):
     def to_kaldi_net(self):
         re_str = ''
         re_str += '<Fsmn> %d %d\n' % (self.dim, self.dim)
-        re_str += '<LearnRateCoef> %d <LOrder> %d <ROrder> %d <LStride> %d <RStride> %d <MaxNorm> 0\n' % (
+        re_str += '<LearnRateCoef> %d <LOrder> %d <ROrder> %d ' \
+                  '<LStride> %d <RStride> %d <MaxNorm> 0\n' % (
             1, self.lorder, self.rorder, self.lstride, self.rstride)
 
         # print(self.conv_left.weight,self.conv_right.weight)
@@ -441,7 +445,8 @@ class FSMN(nn.Module):
         self.output_affine_dim = output_affine_dim
         self.output_dim = output_dim
 
-        self.padding = (self.lorder-1) * self.lstride + self.rorder * self.rstride
+        self.padding = (self.lorder-1) * self.lstride \
+                       + self.rorder * self.rstride
 
         self.in_linear1 = AffineTransform(input_dim, input_affine_dim)
         self.in_linear2 = AffineTransform(input_affine_dim, linear_dim)
@@ -469,7 +474,8 @@ class FSMN(nn.Module):
         """
 
         if in_cache is None or len(in_cache) == 0 :
-            in_cache = [torch.zeros(0, 0, 0, 0, dtype=torch.float) for _ in range(len(self.fsmn))]
+            in_cache = [torch.zeros(0, 0, 0, 0, dtype=torch.float)
+                        for _ in range(len(self.fsmn))]
         input = (input, in_cache)
         x1 = self.in_linear1(input)
         x2 = self.in_linear2(x1)

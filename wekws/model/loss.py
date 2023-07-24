@@ -188,7 +188,8 @@ def criterion(type: str,
         loss, acc = max_pooling_loss(logits, target, lengths, min_duration)
         return loss, acc
     elif type == 'ctc':
-        loss, acc = ctc_loss(logits, target, lengths, target_lengths, validation)
+        loss, acc = ctc_loss(
+            logits, target, lengths, target_lengths, validation)
         return loss, acc
     else:
         exit(1)
@@ -281,7 +282,8 @@ def ctc_prefix_beam_search(
                         if ps > nodes[-1]['prob']:  # update frame and prob
                             # nodes[-1]['prob'] = ps
                             # nodes[-1]['frame'] = t
-                            nodes.pop()    # to avoid change other beam which has this node.
+                            # avoid change other beam which has this node.
+                            nodes.pop()
                             nodes.append(dict(token=s, frame=t, prob=ps))
                     else:
                         nodes = cur_nodes.copy()
@@ -429,7 +431,8 @@ class Calculator:
                 break
             else:  # shouldn't reach here
                 print(
-                    'this should not happen , i = {i} , j = {j} , error = {error}'
+                    'this should not happen, '
+                    'i = {i} , j = {j} , error = {error}'
                     .format(i=i, j=j, error=self.space[i][j]['error']))
         return result
 
