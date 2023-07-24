@@ -39,7 +39,7 @@ FRRs with FAR fixed at once per 12 hours:
 
 Now, the DSTCN model with CTC loss may not get the best performance, because the
 pretraining phase is not sufficiently converged. We recommend you use pretrained
-FSMN model as initial checkpoint to train your own model. 
+FSMN model as initial checkpoint to train your own model.
 
 Comparison Between stream_score_ctc and score_ctc.
 FRRs with FAR fixed at once per 12 hours:
@@ -57,6 +57,6 @@ Actually the probability will increase through the time, so we record a lower va
 which result in a higher False Rejection Rate in Detection Error Tradeoff result.
 The actual FRR will be lower than the DET curve gives in a given threshold.
 
-On some small data KWS tasks, we believe the FSMN-CTC model is more robust 
+On some small data KWS tasks, we believe the FSMN-CTC model is more robust
 compared with the classification model using CE/Max-pooling loss.
 For more infomation and results of FSMN-CTC KWS model, you can click [modelscope](https://modelscope.cn/models/damo/speech_charctc_kws_phone-wenwen/summary).

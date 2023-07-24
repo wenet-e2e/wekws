@@ -16,7 +16,7 @@ from __future__ import print_function
 
 import argparse
 import struct
-#import wave
+# import wave
 import librosa
 import logging
 import os
@@ -328,12 +328,12 @@ class KeyWordSpotter(torch.nn.Module):
         wave_tensor = torch.from_numpy(wave).float().to(self.device)
         wave_tensor = wave_tensor.unsqueeze(0)   # add a channel dimension
         feats = kaldi.fbank(wave_tensor,
-                          num_mel_bins=self.num_mel_bins,
-                          frame_length=self.frame_length,
-                          frame_shift=self.frame_shift,
-                          dither=0,
-                          energy_floor=0.0,
-                          sample_frequency=self.sample_rate)
+                            num_mel_bins=self.num_mel_bins,
+                            frame_length=self.frame_length,
+                            frame_shift=self.frame_shift,
+                            dither=0,
+                            energy_floor=0.0,
+                            sample_frequency=self.sample_rate)
         # update wave remained
         feat_len = len(feats)
         frame_shift = int(self.frame_shift / 1000 * self.sample_rate)
@@ -351,8 +351,8 @@ class KeyWordSpotter(torch.nn.Module):
             else:
                 feats_pad = torch.cat((self.feature_remained, feats))
 
-            ctx_frm = feats_pad.shape[0] - \
-                      (self.right_context+self.right_context)
+            ctx_frm = feats_pad.shape[0] - (
+                self.right_context + self.right_context)
             ctx_win = (self.left_context + self.right_context + 1)
             ctx_dim = feats.shape[1] * ctx_win
             feats_ctx = torch.zeros(ctx_frm, ctx_dim, dtype=torch.float32)
@@ -362,15 +362,15 @@ class KeyWordSpotter(torch.nn.Module):
 
             # update feature remained, and feats
             self.feature_remained = \
-                feats[-(self.left_context+self.right_context):]
+                feats[-(self.left_context + self.right_context):]
             feats = feats_ctx.to(self.device)
         if self.downsampling > 1:
-            last_remainder = 0 if self.feats_ctx_offset==0 \
-                else self.downsampling-self.feats_ctx_offset
-            remainder = (feats.size(0)+last_remainder) % self.downsampling
+            last_remainder = 0 if self.feats_ctx_offset == 0 \
+                else self.downsampling - self.feats_ctx_offset
+            remainder = (feats.size(0) + last_remainder) % self.downsampling
             feats = feats[self.feats_ctx_offset::self.downsampling, :]
             self.feats_ctx_offset = remainder \
-                if remainder == 0 else self.downsampling-remainder
+                if remainder == 0 else self.downsampling - remainder
         return feats
 
     def decode_keywords(self, t, probs):
@@ -419,8 +419,8 @@ class KeyWordSpotter(torch.nn.Module):
         if hit_keyword is not None:
             if self.hit_score >= self.threshold and \
                     self.min_frames <= duration <= self.max_frames \
-                    and (self.last_active_pos==-1 or
-                         end-self.last_active_pos >= self.interval_frames):
+                    and (self.last_active_pos == -1 or
+                         end - self.last_active_pos >= self.interval_frames):
                 self.activated = True
                 self.last_active_pos = end
                 logging.info(
@@ -428,8 +428,8 @@ class KeyWordSpotter(torch.nn.Module):
                     f"from {start} to {end} frame. "
                     f"duration {duration}, score {self.hit_score}, Activated.")
 
-            elif self.last_active_pos>0 and \
-                    end-self.last_active_pos < self.interval_frames:
+            elif self.last_active_pos > 0 and \
+                    end - self.last_active_pos < self.interval_frames:
                 logging.info(
                     f"Frame {absolute_time} detect {hit_keyword} "
                     f"from {start} to {end} frame. "

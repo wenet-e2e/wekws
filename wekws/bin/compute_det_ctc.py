@@ -53,7 +53,7 @@ def load_label_and_score(keywords_list, label_file, score_file, true_keywords):
             key = arr[0]
             is_detected = arr[1]
             if is_detected == 'detected':
-                keyword=true_keywords[arr[2]]
+                keyword = true_keywords[arr[2]]
                 if key not in score_table:
                     score_table.update({
                         key: {
@@ -247,8 +247,8 @@ if __name__ == '__main__':
 
                 num_false_alarm = 0
                 # transverse the all filler_table
-                for key, confi in keyword_filler_table[keyword][
-                    'filler_table'].items():
+                for key, confi in keyword_filler_table[
+                        keyword]['filler_table'].items():
                     if confi >= threshold:
                         num_false_alarm += 1
                         # print(f'false alarm: {keyword}, {key}, {confi}')
