@@ -263,6 +263,51 @@ def shuffle(data, shuffle_size=1000):
     for x in buf:
         yield x
 
+def context_expansion(data, left=1, right=1):
+    """ expand left and right frames
+        Args:
+            data: Iterable[{key, feat, label}]
+            left (int): feature left context frames
+            right (int): feature right context frames
+
+        Returns:
+            data: Iterable[{key, feat, label}]
+    """
+    for sample in data:
+        index = 0
+        feats = sample['feat']
+        ctx_dim = feats.shape[0]
+        ctx_frm = feats.shape[1] * (left + right + 1)
+        feats_ctx = torch.zeros(ctx_dim, ctx_frm, dtype=torch.float32)
+        for lag in range(-left, right + 1):
+            feats_ctx[:, index:index + feats.shape[1]] = torch.roll(
+                feats, -lag, 0)
+            index = index + feats.shape[1]
+
+        # replication pad left margin
+        for idx in range(left):
+            for cpx in range(left - idx):
+                feats_ctx[idx, cpx * feats.shape[1]:(cpx + 1)
+                          * feats.shape[1]] = feats_ctx[left, :feats.shape[1]]
+
+        feats_ctx = feats_ctx[:feats_ctx.shape[0] - right]
+        sample['feat'] = feats_ctx
+        yield sample
+
+
+def frame_skip(data, skip_rate=1):
+    """ skip frame
+        Args:
+            data: Iterable[{key, feat, label}]
+            skip_rate (int): take every N-frames for model input
+
+        Returns:
+            data: Iterable[{key, feat, label}]
+    """
+    for sample in data:
+        feats_skip = sample['feat'][::skip_rate, :]
+        sample['feat'] = feats_skip
+        yield sample
 
 def batch(data, batch_size=16):
     """ Static batch the data by `batch_size`
@@ -302,12 +347,24 @@ def padding(data):
             [sample[i]['feat'].size(0) for i in order], dtype=torch.int32)
         sorted_feats = [sample[i]['feat'] for i in order]
         sorted_keys = [sample[i]['key'] for i in order]
-        sorted_labels = torch.tensor([sample[i]['label'] for i in order],
-                                     dtype=torch.int64)
         padded_feats = pad_sequence(sorted_feats,
                                     batch_first=True,
                                     padding_value=0)
-        yield (sorted_keys, padded_feats, sorted_labels, feats_lengths)
+
+        if isinstance(sample[0]['label'], int):
+            padded_labels = torch.tensor([sample[i]['label'] for i in order],
+                                         dtype=torch.int32)
+            label_lengths = torch.tensor([1 for i in order],
+                                         dtype=torch.int32)
+        else:
+            sorted_labels = [
+                torch.tensor(sample[i]['label'], dtype=torch.int32) for i in order
+            ]
+            label_lengths = torch.tensor([len(sample[i]['label']) for i in order],
+                                         dtype=torch.int32)
+            padded_labels = pad_sequence(
+                sorted_labels, batch_first=True, padding_value=-1)
+        yield (sorted_keys, padded_feats, padded_labels, feats_lengths, label_lengths)
 
 
 def add_reverb(data, reverb_source, aug_prob):
@@ -320,6 +377,8 @@ def add_reverb(data, reverb_source, aug_prob):
             rir_io = io.BytesIO(rir_data)
             _, rir_audio = wavfile.read(rir_io)
             rir_audio = rir_audio.astype(np.float32)
+            if len(rir_audio.shape) > 1:
+                rir_audio = rir_audio[:, 0]
             rir_audio = rir_audio / np.sqrt(np.sum(rir_audio**2))
             out_audio = signal.convolve(audio, rir_audio,
                                         mode='full')[:audio_len]
@@ -348,6 +407,8 @@ def add_noise(data, noise_source, aug_prob):
                 snr_range = [0, 15]
             _, noise_audio = wavfile.read(io.BytesIO(noise_data))
             noise_audio = noise_audio.astype(np.float32)
+            if len(noise_audio.shape) > 1:
+                noise_audio = noise_audio[:, 0]
             if noise_audio.shape[0] > audio_len:
                 start = random.randint(0, noise_audio.shape[0] - audio_len)
                 noise_audio = noise_audio[start:start + audio_len]

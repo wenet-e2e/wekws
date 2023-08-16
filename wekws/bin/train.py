@@ -134,7 +134,8 @@ def main():
     output_dim = args.num_keywords
 
     # Write model_dir/config.yaml for inference and export
-    configs['model']['input_dim'] = input_dim
+    if 'input_dim' not in configs['model']:
+        configs['model']['input_dim'] = input_dim
     configs['model']['output_dim'] = output_dim
     if args.cmvn_file is not None:
         configs['model']['cmvn'] = {}
@@ -156,8 +157,16 @@ def main():
     # Try to export the model by script, if fails, we should refine
     # the code to satisfy the script export requirements
     if rank == 0:
-        script_model = torch.jit.script(model)
-        script_model.save(os.path.join(args.model_dir, 'init.zip'))
+        pass
+        # TODO: for now streaming FSMN do not support export to JITScript,
+        # TODO: because there is nn.Sequential with Tuple input
+        #  in current FSMN modules.
+        #  the issue is in https://stackoverflow.com/questions/75714299/
+        #  pytorch-jit-script-error-when-sequential-container-
+        #  takes-a-tuple-input/76553450#76553450
+
+        # script_model = torch.jit.script(model)
+        # script_model.save(os.path.join(args.model_dir, 'init.zip'))
     executor = Executor()
     # If specify checkpoint, load some info from checkpoint
     if args.checkpoint is not None:

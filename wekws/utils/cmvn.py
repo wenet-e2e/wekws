@@ -15,6 +15,7 @@
 
 import json
 import math
+import re
 
 import numpy as np
 
@@ -41,4 +42,51 @@ def load_cmvn(json_cmvn_file):
             variance[i] = 1.0e-20
         variance[i] = 1.0 / math.sqrt(variance[i])
     cmvn = np.array([means, variance])
+    return cmvn
+
+def load_kaldi_cmvn(cmvn_file):
+    """ Load the kaldi format cmvn stats file and no need to calculate
+
+    Args:
+        cmvn_file: cmvn stats file in kaldi format
+
+    Returns:
+        a numpy array of [means, vars]
+    """
+
+    means = None
+    variance = None
+    with open(cmvn_file) as f:
+        all_lines = f.readlines()
+        for idx, line in enumerate(all_lines):
+            if line.find('AddShift') != -1:
+                segs = line.strip().split(' ')
+                assert len(segs) == 3
+                next_line = all_lines[idx + 1]
+                means_str = re.findall(r'[\[](.*?)[\]]', next_line)[0]
+                means_list = means_str.strip().split(' ')
+                means = [0 - float(s) for s in means_list]
+                assert len(means) == int(segs[1])
+            elif line.find('Rescale') != -1:
+                segs = line.strip().split(' ')
+                assert len(segs) == 3
+                next_line = all_lines[idx + 1]
+                vars_str = re.findall(r'[\[](.*?)[\]]', next_line)[0]
+                vars_list = vars_str.strip().split(' ')
+                variance = [float(s) for s in vars_list]
+                assert len(variance) == int(segs[1])
+            elif line.find('Splice') != -1:
+                segs = line.strip().split(' ')
+                assert len(segs) == 3
+                next_line = all_lines[idx + 1]
+                splice_str = re.findall(r'[\[](.*?)[\]]', next_line)[0]
+                splice_list = splice_str.strip().split(' ')
+                assert len(splice_list) * int(segs[2]) == int(segs[1])
+                copy_times = len(splice_list)
+            else:
+                continue
+
+    cmvn = np.array([means, variance])
+    cmvn = np.tile(cmvn, (1, copy_times))
+
     return cmvn

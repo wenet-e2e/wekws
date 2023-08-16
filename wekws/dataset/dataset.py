@@ -162,6 +162,16 @@ def Dataset(data_list_file, conf,
         spec_aug_conf = conf.get('spec_aug_conf', {})
         dataset = Processor(dataset, processor.spec_aug, **spec_aug_conf)
 
+    context_expansion = conf.get('context_expansion', False)
+    if context_expansion:
+        context_expansion_conf = conf.get('context_expansion_conf', {})
+        dataset = Processor(dataset, processor.context_expansion,
+                            **context_expansion_conf)
+
+    frame_skip = conf.get('frame_skip', 1)
+    if frame_skip > 1:
+        dataset = Processor(dataset, processor.frame_skip, frame_skip)
+
     if shuffle:
         shuffle_conf = conf.get('shuffle_conf', {})
         dataset = Processor(dataset, processor.shuffle, **shuffle_conf)

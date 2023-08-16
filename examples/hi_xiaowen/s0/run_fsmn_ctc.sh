@@ -1,35 +1,40 @@
 #!/bin/bash
 # Copyright 2021  Binbin Zhang(binbzha@qq.com)
+#           2023  Jing Du(thuduj12@163.com)
 
 . ./path.sh
 
 stage=$1
 stop_stage=$2
-num_keywords=2
+num_keywords=2599
 
-config=conf/ds_tcn.yaml
+config=conf/fsmn_ctc.yaml
 norm_mean=true
 norm_var=true
-gpus="0,1"
+gpus="0"
 
 checkpoint=
-dir=exp/ds_tcn
-
+dir=exp/fsmn_ctc
+average_model=true
 num_average=30
-score_checkpoint=$dir/avg_${num_average}.pt
+if $average_model ;then
+  score_checkpoint=$dir/avg_${num_average}.pt
+else
+  score_checkpoint=$dir/final.pt
+fi
 
-download_dir=./data/local # your data dir
+download_dir=/mnt/52_disk/back/DuJing/data/nihaowenwen # your data dir
 
 . tools/parse_options.sh || exit 1;
 window_shift=50
 
-if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
+if [ ${stage} -le -2 ] && [ ${stop_stage} -ge -2 ]; then
   echo "Download and extracte all datasets"
   local/mobvoi_data_download.sh --dl_dir $download_dir
 fi
 
 
-if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
+if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
   echo "Preparing datasets..."
   mkdir -p dict
   echo "<filler> -1" > dict/words.txt
@@ -50,6 +55,23 @@ if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
   done
 fi
 
+if [ ${stage} -le -0 ] && [ ${stop_stage} -ge -0 ]; then
+# Here we Use Paraformer Large(https://www.modelscope.cn/models/damo/speech_paraformer-large_asr_nat-zh-cn-16k-common-vocab8404-pytorch/summary)
+# to transcribe the negative wavs, and upload the transcription to modelscope.
+  git clone https://www.modelscope.cn/datasets/thuduj12/mobvoi_kws_transcription.git
+  for folder in train dev test; do
+    if [ -f data/$folder/text ];then
+      mv data/$folder/text data/$folder/text.label
+    fi
+    cp mobvoi_kws_transcription/$folder.text data/$folder/text
+  done
+
+  # and we also copy the tokens and lexicon that used in
+  # https://modelscope.cn/models/damo/speech_charctc_kws_phone-xiaoyun/summary
+  cp mobvoi_kws_transcription/tokens.txt data/tokens.txt
+  cp mobvoi_kws_transcription/lexicon.txt data/lexicon.txt
+
+fi
 
 if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
   echo "Compute CMVN and Format datasets"
@@ -59,19 +81,32 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
 
   for x in train dev test; do
     tools/wav_to_duration.sh --nj 8 data/$x/wav.scp data/$x/wav.dur
+
+    # Here we use tokens.txt and lexicon.txt to convert txt into index
     tools/make_list.py data/$x/wav.scp data/$x/text \
-      data/$x/wav.dur data/$x/data.list
+      data/$x/wav.dur data/$x/data.list  \
+      --token_file data/tokens.txt \
+      --lexicon_file data/lexicon.txt
   done
 fi
 
-
 if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
+
+  echo "Use the base model from modelscope"
+  if [ ! -d speech_charctc_kws_phone-xiaoyun ] ;then
+      git lfs install
+      git clone https://www.modelscope.cn/damo/speech_charctc_kws_phone-xiaoyun.git
+  fi
+  checkpoint=speech_charctc_kws_phone-xiaoyun/train/base.pt
+  cp speech_charctc_kws_phone-xiaoyun/train/feature_transform.txt.80dim-l2r2 data/global_cmvn.kaldi
+
   echo "Start training ..."
   mkdir -p $dir
   cmvn_opts=
-  $norm_mean && cmvn_opts="--cmvn_file data/train/global_cmvn"
+  $norm_mean && cmvn_opts="--cmvn_file data/global_cmvn.kaldi"
   $norm_var && cmvn_opts="$cmvn_opts --norm_var"
   num_gpus=$(echo $gpus | awk -F ',' '{print NF}')
+
   torchrun --standalone --nnodes=1 --nproc_per_node=$num_gpus \
     wekws/bin/train.py --gpus $gpus \
       --config $config \
@@ -88,46 +123,51 @@ fi
 
 if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
   echo "Do model average, Compute FRR/FAR ..."
-  python wekws/bin/average_model.py \
-    --dst_model $score_checkpoint \
-    --src_path $dir  \
-    --num ${num_average} \
-    --val_best
+  if $average_model; then
+    python wekws/bin/average_model.py \
+      --dst_model $score_checkpoint \
+      --src_path $dir  \
+      --num ${num_average} \
+      --val_best
+  fi
   result_dir=$dir/test_$(basename $score_checkpoint)
   mkdir -p $result_dir
-  python wekws/bin/score.py \
+  stream=true   # we detect keyword online with ctc_prefix_beam_search
+  score_prefix=""
+  if $stream ; then
+    score_prefix=stream_
+  fi
+  python wekws/bin/${score_prefix}score_ctc.py \
     --config $dir/config.yaml \
     --test_data data/test/data.list \
-    --gpu 0 \
+    --gpu 0  \
     --batch_size 256 \
     --checkpoint $score_checkpoint \
     --score_file $result_dir/score.txt  \
-    --num_workers 8
+    --num_workers 8  \
+    --keywords "\u55e8\u5c0f\u95ee,\u4f60\u597d\u95ee\u95ee" \
+    --token_file data/tokens.txt \
+    --lexicon_file data/lexicon.txt
 
-  for keyword in 0 1; do
-    python wekws/bin/compute_det.py \
-      --keyword $keyword \
+  python wekws/bin/compute_det_ctc.py \
+      --keywords "\u55e8\u5c0f\u95ee,\u4f60\u597d\u95ee\u95ee" \
       --test_data data/test/data.list \
       --window_shift $window_shift \
+      --step 0.001  \
       --score_file $result_dir/score.txt \
-      --stats_file $result_dir/stats.${keyword}.txt
-  done
-
-  # plot det curve
-  python wekws/bin/plot_det_curve.py \
-      --keywords_dict dict/words.txt \
-      --stats_dir  $result_dir \
-      --figure_file $result_dir/det.png
+      --token_file data/tokens.txt \
+      --lexicon_file data/lexicon.txt
 fi
 
 
 if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
   jit_model=$(basename $score_checkpoint | sed -e 's:.pt$:.zip:g')
   onnx_model=$(basename $score_checkpoint | sed -e 's:.pt$:.onnx:g')
-  python wekws/bin/export_jit.py \
-    --config $dir/config.yaml \
-    --checkpoint $score_checkpoint \
-    --jit_model $dir/$jit_model
+  # For now, FSMN can not export to JITScript
+#  python wekws/bin/export_jit.py \
+#    --config $dir/config.yaml \
+#    --checkpoint $score_checkpoint \
+#    --jit_model $dir/$jit_model
   python wekws/bin/export_onnx.py \
     --config $dir/config.yaml \
     --checkpoint $score_checkpoint \
