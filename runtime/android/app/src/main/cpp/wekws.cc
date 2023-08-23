@@ -49,7 +49,7 @@ void accept_waveform(JNIEnv* env, jobject, jshortArray jWaveform) {
   int16_t* waveform = env->GetShortArrayElements(jWaveform, 0);
   std::vector<int16_t> v(waveform, waveform + size);
   feature_pipeline->AcceptWaveform(v);
-  env->ReleaseShortArrayElements(jWaveform, waveform,0);
+  env->ReleaseShortArrayElements(jWaveform, waveform, 0);
 
   LOG(INFO) << "wekws accept waveform in ms: " << int(size / 16);
 }
@@ -81,7 +81,7 @@ void set_input_finished() {
 //   decode_thread.detach();
 // }
 
-void start_spot(){
+void start_spot() {
     std::vector<std::vector<float>> feats;
     feature_pipeline->Read(80, &feats);
     std::vector<std::vector<float>> prob;
