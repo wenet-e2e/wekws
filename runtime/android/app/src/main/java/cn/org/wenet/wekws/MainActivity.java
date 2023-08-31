@@ -101,12 +101,12 @@ public class MainActivity extends AppCompatActivity {
             if (!startRecord) {
                 startRecord = true;
                 startRecordThread();
+                startAcceptWaveThread();
                 startSpotThread();
-                Spot.reset();
-                Spot.startSpot();
                 button.setText("Stop Record");
             } else {
                 startRecord = false;
+                Spot.setInputFinished();
                 button.setText("Start Record");
             }
         });
@@ -191,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
         return energy;
     }
 
-    private void startSpotThread() {
+    private void startAcceptWaveThread() {
         new Thread(() -> {
             // Send all data
             while (startRecord || bufferQueue.size() > 0) {
@@ -207,6 +207,17 @@ public class MainActivity extends AppCompatActivity {
                 } catch (InterruptedException e) {
                     Log.e(LOG_TAG, e.getMessage());
                 }
+            }
+        }).start();
+    }
+
+    private void startSpotThread() {
+        new Thread(() -> {
+            Spot.reset();
+            // Send all data
+            while (startRecord) {
+                Spot.startSpot();
+                Log.i(LOG_TAG, Spot.getResult());
             }
         }).start();
     }

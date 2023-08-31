@@ -41,6 +41,7 @@ void reset(JNIEnv* env, jobject) {
   offset = 0;
   result = "";
   spotter->Reset();
+  feature_pipeline->Reset();
 }
 
 void accept_waveform(JNIEnv* env, jobject, jshortArray jWaveform) {
@@ -48,6 +49,8 @@ void accept_waveform(JNIEnv* env, jobject, jshortArray jWaveform) {
   int16_t* waveform = env->GetShortArrayElements(jWaveform, 0);
   std::vector<int16_t> v(waveform, waveform + size);
   feature_pipeline->AcceptWaveform(v);
+  env->ReleaseShortArrayElements(jWaveform, waveform, 0);
+
   LOG(INFO) << "wekws accept waveform in ms: " << int(size / 16);
 }
 
@@ -56,8 +59,29 @@ void set_input_finished() {
   feature_pipeline->set_input_finished();
 }
 
-void spot_thread_func() {
-  while (true) {
+// void spot_thread_func() {
+//   while (true) {
+//     std::vector<std::vector<float>> feats;
+//     feature_pipeline->Read(80, &feats);
+//     std::vector<std::vector<float>> prob;
+//     spotter->Forward(feats, &prob);
+//     float max_prob = 0.0;
+//     for (int t = 0; t < prob.size(); t++) {
+//       for (int j = 0; j < prob[t].size(); j++) {
+//         max_prob = std::max(prob[t][j], max_prob);
+//       }
+//     }
+//     result = std::to_string(offset) + " prob: " + std::to_string(max_prob);
+//     offset += prob.size();
+//   }
+// }
+
+// void start_spot() {
+//   std::thread decode_thread(spot_thread_func);
+//   decode_thread.detach();
+// }
+
+void start_spot() {
     std::vector<std::vector<float>> feats;
     feature_pipeline->Read(80, &feats);
     std::vector<std::vector<float>> prob;
@@ -70,12 +94,6 @@ void spot_thread_func() {
     }
     result = std::to_string(offset) + " prob: " + std::to_string(max_prob);
     offset += prob.size();
-  }
-}
-
-void start_spot() {
-  std::thread decode_thread(spot_thread_func);
-  decode_thread.detach();
 }
 
 jstring get_result(JNIEnv* env, jobject) {
