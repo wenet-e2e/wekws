@@ -478,7 +478,7 @@ class FSMN(nn.Module):
             in_cache = [torch.zeros(0, 0, 0, 0, dtype=torch.float)
                         for _ in range(len(self.fsmn))]
         else:
-            in_cache = [in_cache[:, :, :, i: i+1] for i in range(in_cache.size(-1))]
+            in_cache = [in_cache[:, :, :, i: i + 1] for i in range(in_cache.size(-1))]
         input = (input, in_cache)
         x1 = self.in_linear1(input)
         x2 = self.in_linear2(x1)
