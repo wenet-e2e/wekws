@@ -41,6 +41,8 @@ def main():
         configs = yaml.load(fin, Loader=yaml.FullLoader)
     feature_dim = configs['model']['input_dim']
     model = init_model(configs['model'])
+    is_fsmn = configs['model']['backbone']['type'] == 'fsmn'
+    num_layers = configs['model']['backbone']['num_layers']
     if configs['training_config'].get('criterion', 'max_pooling') == 'ctc':
         # if we use ctc_loss, the logits need to be convert into probs
         model.forward = model.forward_softmax
@@ -54,6 +56,8 @@ def main():
                         model.hdim,
                         model.backbone.padding,
                         dtype=torch.float)
+    if is_fsmn:
+        cache = cache.unsqueeze(-1).expand(-1, -1, -1, num_layers)
     torch.onnx.export(model, (dummy_input, cache),
                       args.onnx_model,
                       input_names=['input', 'cache'],

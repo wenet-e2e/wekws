@@ -477,6 +477,8 @@ class FSMN(nn.Module):
         if in_cache is None or len(in_cache) == 0 :
             in_cache = [torch.zeros(0, 0, 0, 0, dtype=torch.float)
                         for _ in range(len(self.fsmn))]
+        else:
+            in_cache = [in_cache[:, :, :, i:i+1] for i in range(in_cache.size(-1))]
         input = (input, in_cache)
         x1 = self.in_linear1(input)
         x2 = self.in_linear2(x1)
@@ -490,7 +492,7 @@ class FSMN(nn.Module):
         # x7 = self.softmax(x6)
         x7, _ = x6
         # return x7, None
-        return x7, in_cache
+        return x7, torch.cat(in_cache, dim=-1)
 
     def to_kaldi_net(self):
         re_str = ''
