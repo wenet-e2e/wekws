@@ -481,6 +481,15 @@ class KeyWordSpotter(torch.nn.Module):
 
         # update frame offset
         self.total_frames += len(probs) * self.downsampling
+
+        # For streaming kws, the cur_hyps should be reset if the time of
+        # a possible keyword last over the max_frames value you set.
+        # see this issue:https://github.com/duj12/kws_demo/issues/2
+        if len(self.cur_hyps) > 0 and len(self.cur_hyps[0][0]) > 0:
+            keyword_may_start = int(self.cur_hyps[0][1][2][0]['frame'])
+            if (self.total_frames - keyword_may_start) > self.max_frames:
+                self.reset()
+
         return self.result
 
     def reset(self):
