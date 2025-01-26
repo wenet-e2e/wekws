@@ -31,10 +31,20 @@ git clone https://github.com/wenet-e2e/wekws.git
 - Create Conda env:
 
 ``` sh
-conda create -n wekws python=3.8
+conda create -n wekws python=3.10
 conda activate wekws
+conda install conda-forge::sox
+```
+- Install torch and torchaudio, It's recommended to use torch 2.5.1 with CUDA 12.4 (for other versions of CUDA, please see https://pytorch.org/get-started/locally/)
+
+``` sh
+pip install torch torchaudio
+```
+
+- Install other python packages
+
+``` sh
 pip install -r requirements.txt
-conda install pytorch=1.10.0 torchaudio=0.10.0 cudatoolkit=11.1 -c pytorch -c conda-forge
 ```
 
 ## Dataset
