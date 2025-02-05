@@ -204,7 +204,7 @@ if __name__ == '__main__':
                                                    token_table,
                                                    lexicon_table)
             else:
-                txt = int(arr[1])
+                txt = arr[1]
             assert key in wav_table
             wav = wav_table[key]
             assert key in duration_table

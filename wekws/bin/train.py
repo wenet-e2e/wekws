@@ -26,11 +26,12 @@ import yaml
 from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 
-from wekws.dataset.dataset import Dataset
+from wekws.dataset.init_dataset import init_dataset
 from wekws.utils.checkpoint import load_checkpoint, save_checkpoint
 from wekws.model.kws_model import init_model
 from wekws.utils.executor import Executor
 from wekws.utils.train_utils import count_parameters, set_mannul_seed
+from wenet.text.char_tokenizer import CharTokenizer
 
 
 def get_args():
@@ -65,6 +66,7 @@ def get_args():
                         action='store_true',
                         default=False,
                         help='norm var option')
+    parser.add_argument('--dict', default='./dict', help='dict dir')
     parser.add_argument('--num_keywords',
                         default=1,
                         type=int,
@@ -101,7 +103,7 @@ def main():
     rank = int(os.environ['LOCAL_RANK'])
     world_size = int(os.environ['WORLD_SIZE'])
     gpu = int(args.gpus.split(',')[rank])
-    os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu)
+    torch.cuda.set_device(gpu)
     if world_size > 1:
         logging.info('training on multiple gpus, this gpu {}'.format(gpu))
         dist.init_process_group(backend=args.dist_backend)
@@ -112,11 +114,18 @@ def main():
     cv_conf['spec_aug'] = False
     cv_conf['shuffle'] = False
 
-    train_dataset = Dataset(args.train_data,
-                            train_conf,
-                            reverb_lmdb=args.reverb_lmdb,
-                            noise_lmdb=args.noise_lmdb)
-    cv_dataset = Dataset(args.cv_data, cv_conf)
+    # train_dataset = Dataset(args.train_data,
+    #                         train_conf,
+    #                         reverb_lmdb=args.reverb_lmdb,
+    #                         noise_lmdb=args.noise_lmdb)
+    tokenizer = CharTokenizer(f'{args.dict}/dict.txt',
+                              f'{args.dict}/words.txt',
+                              unk='<filler>')
+    train_dataset = init_dataset(data_list_file=args.train_data,
+                                 conf=train_conf,
+                                 tokenizer=tokenizer)
+    cv_dataset = init_dataset(data_list_file=args.cv_data, conf=cv_conf,
+                              tokenizer=tokenizer, split='dev')
 
     train_data_loader = DataLoader(train_dataset,
                                    batch_size=None,
@@ -129,7 +138,8 @@ def main():
                                 num_workers=args.num_workers,
                                 prefetch_factor=args.prefetch)
 
-    input_dim = configs['dataset_conf']['feature_extraction_conf'][
+    feats_type = train_conf.get('feats_type', 'fbank')
+    input_dim = train_conf[f'{feats_type}_conf'][
         'num_mel_bins']
     output_dim = args.num_keywords
 
@@ -215,7 +225,7 @@ def main():
 
     # Start training loop
     for epoch in range(start_epoch, num_epochs):
-        train_dataset.set_epoch(epoch)
+        # train_dataset.set_epoch(epoch)
         training_config['epoch'] = epoch
         lr = optimizer.param_groups[0]['lr']
         logging.info('Epoch {} TRAIN info lr {}'.format(epoch, lr))
