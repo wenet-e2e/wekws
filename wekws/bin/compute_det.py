@@ -26,7 +26,7 @@ def load_label_and_score(keyword, label_file, score_file):
             key = arr[0]
             current_keyword = arr[1]
             str_list = arr[2:]
-            if int(current_keyword) == keyword:
+            if current_keyword == keyword:
                 scores = list(map(float, str_list))
                 if key not in score_table:
                     score_table.update({key: scores})
@@ -40,10 +40,10 @@ def load_label_and_score(keyword, label_file, score_file):
             assert 'txt' in obj
             assert 'duration' in obj
             key = obj['key']
-            index = obj['txt']
+            txt = obj['txt'].upper()
             duration = obj['duration']
-            assert key in score_table
-            if index == keyword:
+            assert key in score_table, f'key: {key} not found'
+            if txt == keyword:
                 keyword_table[key] = score_table[key]
             else:
                 filler_table[key] = score_table[key]
@@ -54,7 +54,7 @@ def load_label_and_score(keyword, label_file, score_file):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='compute det curve')
     parser.add_argument('--test_data', required=True, help='label file')
-    parser.add_argument('--keyword', type=int, default=0, help='keyword label')
+    parser.add_argument('--keyword', required=True, help='keyword label')
     parser.add_argument('--score_file', required=True, help='score file')
     parser.add_argument('--step', type=float, default=0.01,
                         help='threshold step')
@@ -69,7 +69,7 @@ if __name__ == '__main__':
         args.keyword, args.test_data, args.score_file)
     print('Filler total duration Hours: {}'.format(filler_duration / 3600.0))
     with open(args.stats_file, 'w', encoding='utf8') as fout:
-        keyword_index = int(args.keyword)
+        keyword = args.keyword
         threshold = 0.0
         while threshold <= 1.0:
             num_false_reject = 0

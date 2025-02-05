@@ -105,10 +105,9 @@ if __name__ == '__main__':
 
     with open(args.train_config, 'r') as fin:
         configs = yaml.load(fin, Loader=yaml.FullLoader)
-    feat_dim = configs['dataset_conf']['feature_extraction_conf'][
+    feat_type = configs['dataset_conf']['feats_type']
+    feat_dim = configs['dataset_conf'][f'{feat_type}_conf'][
         'num_mel_bins']
-    feat_type = configs['dataset_conf']['feature_extraction_conf'][
-        'feature_type']
     resample_rate = 0
     if 'resample_conf' in configs['dataset_conf']:
         resample_rate = configs['dataset_conf']['resample_conf'][
