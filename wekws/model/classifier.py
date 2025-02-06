@@ -18,6 +18,7 @@ import torch.nn as nn
 
 class GlobalClassifier(nn.Module):
     """Add a global average pooling before the classifier"""
+
     def __init__(self, classifier: nn.Module):
         super(GlobalClassifier, self).__init__()
         self.classifier = classifier
@@ -29,6 +30,7 @@ class GlobalClassifier(nn.Module):
 
 class LastClassifier(nn.Module):
     """Select last frame to do the classification"""
+
     def __init__(self, classifier: nn.Module):
         super(LastClassifier, self).__init__()
         self.classifier = classifier
@@ -37,8 +39,10 @@ class LastClassifier(nn.Module):
         x = x[:, -1, :]
         return self.classifier(x)
 
+
 class ElementClassifier(nn.Module):
     """Classify all the frames in an utterance"""
+
     def __init__(self, classifier: nn.Module):
         super(ElementClassifier, self).__init__()
         self.classifier = classifier
@@ -46,8 +50,10 @@ class ElementClassifier(nn.Module):
     def forward(self, x: torch.Tensor):
         return self.classifier(x)
 
+
 class LinearClassifier(nn.Module):
     """ Wrapper of Linear """
+
     def __init__(self, input_dim, output_dim):
         super().__init__()
         self.linear = torch.nn.Linear(input_dim, output_dim)

@@ -39,8 +39,7 @@ class LinearTransform(nn.Module):
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()
 
-    def forward(self,
-                input: Tuple[torch.Tensor, torch.Tensor]):
+    def forward(self, input: Tuple[torch.Tensor, torch.Tensor]):
         if isinstance(input, tuple):
             input, in_cache = input
         else:
@@ -103,8 +102,7 @@ class AffineTransform(nn.Module):
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()
 
-    def forward(self,
-                input: Tuple[torch.Tensor, torch.Tensor]):
+    def forward(self, input: Tuple[torch.Tensor, torch.Tensor]):
         if isinstance(input, tuple):
             input, in_cache = input
         else:
@@ -195,54 +193,54 @@ class FSMNBlock(nn.Module):
         self.lstride = lstride
         self.rstride = rstride
 
-        self.conv_left = nn.Conv2d(
-            self.dim,
-            self.dim, [lorder, 1],
-            dilation=[lstride, 1],
-            groups=self.dim,
-            bias=False)
+        self.conv_left = nn.Conv2d(self.dim,
+                                   self.dim, [lorder, 1],
+                                   dilation=[lstride, 1],
+                                   groups=self.dim,
+                                   bias=False)
 
         if rorder > 0:
-            self.conv_right = nn.Conv2d(
-                self.dim,
-                self.dim, [rorder, 1],
-                dilation=[rstride, 1],
-                groups=self.dim,
-                bias=False)
+            self.conv_right = nn.Conv2d(self.dim,
+                                        self.dim, [rorder, 1],
+                                        dilation=[rstride, 1],
+                                        groups=self.dim,
+                                        bias=False)
         else:
             self.conv_right = None
 
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()
 
-    def forward(self,
-                input: Tuple[torch.Tensor, torch.Tensor]):
+    def forward(self, input: Tuple[torch.Tensor, torch.Tensor]):
         if isinstance(input, tuple):
             input, in_cache = input
-        else :
+        else:
             in_cache = torch.zeros(0, 0, 0, 0, dtype=torch.float)
         x = torch.unsqueeze(input, 1)
         x_per = x.permute(0, 3, 2, 1)
 
-        if in_cache is None or len(in_cache) == 0 :
-            x_pad = F.pad(x_per, [0, 0, (self.lorder - 1) * self.lstride
-                                  + self.rorder * self.rstride, 0])
+        if in_cache is None or len(in_cache) == 0:
+            x_pad = F.pad(x_per, [
+                0, 0,
+                (self.lorder - 1) * self.lstride + self.rorder * self.rstride,
+                0
+            ])
         else:
             in_cache = in_cache.to(x_per.device)
             x_pad = torch.cat((in_cache, x_per), dim=2)
-        in_cache = x_pad[:, :, -((self.lorder - 1) * self.lstride
-                                 + self.rorder * self.rstride):, :]
+        in_cache = x_pad[:, :, -(
+            (self.lorder - 1) * self.lstride + self.rorder * self.rstride):, :]
         y_left = x_pad[:, :, :-self.rorder * self.rstride, :]
         y_left = self.quant(y_left)
         y_left = self.conv_left(y_left)
         y_left = self.dequant(y_left)
-        out = x_pad[:, :, (self.lorder - 1) * self.lstride: -self.rorder *
+        out = x_pad[:, :, (self.lorder - 1) * self.lstride:-self.rorder *
                     self.rstride, :] + y_left
 
         if self.conv_right is not None:
             # y_right = F.pad(x_per, [0, 0, 0, (self.rorder) * self.rstride])
-            y_right = x_pad[:, :, -(
-                x_per.size(2) + self.rorder * self.rstride):, :]
+            y_right = x_pad[:, :,
+                            -(x_per.size(2) + self.rorder * self.rstride):, :]
             y_right = y_right[:, :, self.rstride:, :]
             y_right = self.quant(y_right)
             y_right = self.conv_right(y_right)
@@ -347,11 +345,10 @@ class RectifiedLinear(nn.Module):
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(0.1)
 
-    def forward(self,
-                input: Tuple[torch.Tensor, torch.Tensor]):
+    def forward(self, input: Tuple[torch.Tensor, torch.Tensor]):
         if isinstance(input, tuple):
             input, in_cache = input
-        else :
+        else:
             in_cache = torch.zeros(0, 0, 0, 0, dtype=torch.float)
         out = self.relu(input)
         # out = self.dropout(out)
@@ -391,11 +388,10 @@ def _build_repeats(
     rstride=1,
 ):
     repeats = [
-        nn.Sequential(
-            LinearTransform(linear_dim, proj_dim),
-            FSMNBlock(proj_dim, proj_dim, lorder, rorder, 1, 1),
-            AffineTransform(proj_dim, linear_dim),
-            RectifiedLinear(linear_dim, linear_dim))
+        nn.Sequential(LinearTransform(linear_dim, proj_dim),
+                      FSMNBlock(proj_dim, proj_dim, lorder, rorder, 1, 1),
+                      AffineTransform(proj_dim, linear_dim),
+                      RectifiedLinear(linear_dim, linear_dim))
         for i in range(fsmn_layers)
     ]
 
@@ -474,11 +470,15 @@ class FSMN(nn.Module):
             in_cache(torch.Tensor): (B, D, C), C is the accumulated cache size
         """
 
-        if in_cache is None or len(in_cache) == 0 :
-            in_cache = [torch.zeros(0, 0, 0, 0, dtype=torch.float)
-                        for _ in range(len(self.fsmn))]
+        if in_cache is None or len(in_cache) == 0:
+            in_cache = [
+                torch.zeros(0, 0, 0, 0, dtype=torch.float)
+                for _ in range(len(self.fsmn))
+            ]
         else:
-            in_cache = [in_cache[:, :, :, i: i + 1] for i in range(in_cache.size(-1))]
+            in_cache = [
+                in_cache[:, :, :, i:i + 1] for i in range(in_cache.size(-1))
+            ]
         input = (input, in_cache)
         x1 = self.in_linear1(input)
         x2 = self.in_linear2(x1)

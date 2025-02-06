@@ -19,6 +19,7 @@ import torch
 
 
 class SubsamplingBase(torch.nn.Module):
+
     def __init__(self):
         super().__init__()
         self.subsampling_rate = 1
@@ -27,6 +28,7 @@ class SubsamplingBase(torch.nn.Module):
 class NoSubsampling(SubsamplingBase):
     """No subsampling in accordance to the 'none' preprocessing
     """
+
     def __init__(self):
         super().__init__()
 
@@ -37,6 +39,7 @@ class NoSubsampling(SubsamplingBase):
 class LinearSubsampling1(SubsamplingBase):
     """Linear transform the input without subsampling
     """
+
     def __init__(self, idim: int, odim: int):
         super().__init__()
         self.out = torch.nn.Sequential(
@@ -61,6 +64,7 @@ class LinearSubsampling1(SubsamplingBase):
 class Conv1dSubsampling1(SubsamplingBase):
     """Conv1d transform without subsampling
     """
+
     def __init__(self, idim: int, odim: int):
         super().__init__()
         self.out = torch.nn.Sequential(

@@ -17,6 +17,7 @@ import torch
 
 
 class GlobalCMVN(torch.nn.Module):
+
     def __init__(self,
                  mean: torch.Tensor,
                  istd: torch.Tensor,

@@ -22,6 +22,7 @@ import re
 
 symbol_str = '[’!"#$%&\'()*+,-./:;<>=?@，。?★、…【】《》？“”‘’！[\\]^_`{|}~]+'
 
+
 def split_mixed_label(input_str):
     tokens = []
     s = input_str.lower()
@@ -34,6 +35,7 @@ def split_mixed_label(input_str):
         tokens.append(word)
         s = s.replace(word, '', 1).strip(' ')
     return tokens
+
 
 def query_token_set(txt, symbol_table, lexicon_table):
     tokens_str = tuple()
@@ -75,12 +77,10 @@ def query_token_set(txt, symbol_table, lexicon_table):
         else:
             if '<GBG>' in symbol_table:
                 tokens_idx = tokens_idx + (symbol_table['<GBG>'], )
-                logging.info(
-                    f'{ch} is not in token set, replace with <GBG>')
+                logging.info(f'{ch} is not in token set, replace with <GBG>')
             else:
                 tokens_idx = tokens_idx + (symbol_table['<blk>'], )
-                logging.info(
-                    f'{ch} is not in token set, replace with <blk>')
+                logging.info(f'{ch} is not in token set, replace with <blk>')
 
     return tokens_str, tokens_idx
 
@@ -125,14 +125,13 @@ def query_token_list(txt, symbol_table, lexicon_table):
         else:
             if '<GBG>' in symbol_table:
                 tokens_idx.append(symbol_table['<GBG>'])
-                logging.info(
-                    f'{ch} is not in token set, replace with <GBG>')
+                logging.info(f'{ch} is not in token set, replace with <GBG>')
             else:
                 tokens_idx.append(symbol_table['<blk>'])
-                logging.info(
-                    f'{ch} is not in token set, replace with <blk>')
+                logging.info(f'{ch} is not in token set, replace with <blk>')
 
     return tokens_str, tokens_idx
+
 
 def read_token(token_file):
     tokens_table = {}
@@ -162,9 +161,13 @@ if __name__ == '__main__':
     parser.add_argument('text_file', help='text file')
     parser.add_argument('duration_file', help='duration file')
     parser.add_argument('output_file', help='output list file')
-    parser.add_argument('--token_file', type=str, default=None,
+    parser.add_argument('--token_file',
+                        type=str,
+                        default=None,
                         help='the path of tokens.txt')
-    parser.add_argument('--lexicon_file', type=str, default=None,
+    parser.add_argument('--lexicon_file',
+                        type=str,
+                        default=None,
                         help='the path of lexicon.txt')
     args = parser.parse_args()
 
@@ -195,13 +198,12 @@ if __name__ == '__main__':
             arr = line.strip().split(maxsplit=1)
             key = arr[0]
             tokens = None
-            if token_table is not None and lexicon_table is not None :
+            if token_table is not None and lexicon_table is not None:
                 if len(arr) < 2:  # for some utterence, no text
                     txt = [1]  # the <blank>/sil is indexed by 1
                     tokens = ["sil"]
                 else:
-                    tokens, txt = query_token_list(arr[1],
-                                                   token_table,
+                    tokens, txt = query_token_list(arr[1], token_table,
                                                    lexicon_table)
             else:
                 txt = int(arr[1])
@@ -212,8 +214,11 @@ if __name__ == '__main__':
             if tokens is None:
                 line = dict(key=key, txt=txt, duration=duration, wav=wav)
             else:
-                line = dict(key=key, tok=tokens, txt=txt,
-                            duration=duration, wav=wav)
+                line = dict(key=key,
+                            tok=tokens,
+                            txt=txt,
+                            duration=duration,
+                            wav=wav)
 
             json_line = json.dumps(line, ensure_ascii=False)
             fout.write(json_line + '\n')

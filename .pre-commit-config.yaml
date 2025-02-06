@@ -15,6 +15,8 @@ repos:
     rev: 'v17.0.6'
     hooks:
     - id: clang-format
+      args: ['--style=file']
+      exclude: 'runtime/android/app/src/.*\.(json|java|js|m|mm|proto)'
   - repo: https://github.com/cpplint/cpplint
     rev: '1.6.1'
     hooks:

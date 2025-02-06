@@ -263,6 +263,7 @@ def shuffle(data, shuffle_size=1000):
     for x in buf:
         yield x
 
+
 def context_expansion(data, left=1, right=1):
     """ expand left and right frames
         Args:
@@ -287,8 +288,8 @@ def context_expansion(data, left=1, right=1):
         # replication pad left margin
         for idx in range(left):
             for cpx in range(left - idx):
-                feats_ctx[idx, cpx * feats.shape[1]:(cpx + 1)
-                          * feats.shape[1]] = feats_ctx[left, :feats.shape[1]]
+                feats_ctx[idx, cpx * feats.shape[1]:(cpx + 1) *
+                          feats.shape[1]] = feats_ctx[left, :feats.shape[1]]
 
         feats_ctx = feats_ctx[:feats_ctx.shape[0] - right]
         sample['feat'] = feats_ctx
@@ -308,6 +309,7 @@ def frame_skip(data, skip_rate=1):
         feats_skip = sample['feat'][::skip_rate, :]
         sample['feat'] = feats_skip
         yield sample
+
 
 def batch(data, batch_size=16):
     """ Static batch the data by `batch_size`
@@ -354,17 +356,19 @@ def padding(data):
         if isinstance(sample[0]['label'], int):
             padded_labels = torch.tensor([sample[i]['label'] for i in order],
                                          dtype=torch.int32)
-            label_lengths = torch.tensor([1 for i in order],
-                                         dtype=torch.int32)
+            label_lengths = torch.tensor([1 for i in order], dtype=torch.int32)
         else:
             sorted_labels = [
-                torch.tensor(sample[i]['label'], dtype=torch.int32) for i in order
+                torch.tensor(sample[i]['label'], dtype=torch.int32)
+                for i in order
             ]
-            label_lengths = torch.tensor([len(sample[i]['label']) for i in order],
-                                         dtype=torch.int32)
-            padded_labels = pad_sequence(
-                sorted_labels, batch_first=True, padding_value=-1)
-        yield (sorted_keys, padded_feats, padded_labels, feats_lengths, label_lengths)
+            label_lengths = torch.tensor(
+                [len(sample[i]['label']) for i in order], dtype=torch.int32)
+            padded_labels = pad_sequence(sorted_labels,
+                                         batch_first=True,
+                                         padding_value=-1)
+        yield (sorted_keys, padded_feats, padded_labels, feats_lengths,
+               label_lengths)
 
 
 def add_reverb(data, reverb_source, aug_prob):

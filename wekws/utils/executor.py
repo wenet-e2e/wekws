@@ -21,6 +21,7 @@ from wekws.model.loss import criterion
 
 
 class Executor:
+
     def __init__(self):
         self.step = 0
 
@@ -44,7 +45,10 @@ class Executor:
                 continue
             logits, _ = model(feats)
             loss_type = args.get('criterion', 'max_pooling')
-            loss, acc = criterion(loss_type, logits, target, feats_lengths,
+            loss, acc = criterion(loss_type,
+                                  logits,
+                                  target,
+                                  feats_lengths,
                                   target_lengths=label_lengths,
                                   min_duration=min_duration,
                                   validation=False)
@@ -80,7 +84,9 @@ class Executor:
                     continue
                 logits, _ = model(feats)
                 loss, acc = criterion(args.get('criterion', 'max_pooling'),
-                                      logits, target, feats_lengths,
+                                      logits,
+                                      target,
+                                      feats_lengths,
                                       target_lengths=label_lengths,
                                       min_duration=0,
                                       validation=True)

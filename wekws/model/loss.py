@@ -98,6 +98,7 @@ def acc_frame(
     correct = pred.eq(target.long().view_as(pred)).sum().item()
     return correct * 100.0 / logits.size(0)
 
+
 def acc_utterance(logits: torch.Tensor, target: torch.Tensor,
                   logits_length: torch.Tensor, target_length: torch.Tensor):
     if logits is None:
@@ -127,8 +128,9 @@ def acc_utterance(logits: torch.Tensor, target: torch.Tensor,
             total_sub += result['sub']
             total_del += result['del']
 
-    return float(total_word - total_ins - total_sub
-                 - total_del) * 100.0 / total_word
+    return float(total_word - total_ins - total_sub -
+                 total_del) * 100.0 / total_word
+
 
 def ctc_loss(logits: torch.Tensor,
              target: torch.Tensor,
@@ -152,11 +154,15 @@ def ctc_loss(logits: torch.Tensor,
     # logits: (B, L, D) -> (L, B, D)
     logits = logits.transpose(0, 1)
     logits = logits.log_softmax(2)
-    loss = F.ctc_loss(
-        logits, target, logits_lengths, target_lengths, reduction='sum')
+    loss = F.ctc_loss(logits,
+                      target,
+                      logits_lengths,
+                      target_lengths,
+                      reduction='sum')
     loss = loss / logits.size(1)  # batch mean
 
     return loss, acc
+
 
 def cross_entropy(logits: torch.Tensor, target: torch.Tensor):
     """ Cross Entropy Loss
@@ -174,13 +180,15 @@ def cross_entropy(logits: torch.Tensor, target: torch.Tensor):
     return loss, acc
 
 
-def criterion(type: str,
-              logits: torch.Tensor,
-              target: torch.Tensor,
-              lengths: torch.Tensor,
-              target_lengths: torch.Tensor = None,
-              min_duration: int = 0,
-              validation: bool = False, ):
+def criterion(
+    type: str,
+    logits: torch.Tensor,
+    target: torch.Tensor,
+    lengths: torch.Tensor,
+    target_lengths: torch.Tensor = None,
+    min_duration: int = 0,
+    validation: bool = False,
+):
     if type == 'ce':
         loss, acc = cross_entropy(logits, target)
         return loss, acc
@@ -188,11 +196,12 @@ def criterion(type: str,
         loss, acc = max_pooling_loss(logits, target, lengths, min_duration)
         return loss, acc
     elif type == 'ctc':
-        loss, acc = ctc_loss(
-            logits, target, lengths, target_lengths, validation)
+        loss, acc = ctc_loss(logits, target, lengths, target_lengths,
+                             validation)
         return loss, acc
     else:
         exit(1)
+
 
 def ctc_prefix_beam_search(
     logits: torch.Tensor,
@@ -293,8 +302,9 @@ def ctc_prefix_beam_search(
                     next_hyps[n_prefix] = (n_pb, n_pnb, nodes)
 
         # 2.2 Second beam prune
-        next_hyps = sorted(
-            next_hyps.items(), key=lambda x: (x[1][0] + x[1][1]), reverse=True)
+        next_hyps = sorted(next_hyps.items(),
+                           key=lambda x: (x[1][0] + x[1][1]),
+                           reverse=True)
 
         cur_hyps = next_hyps[:path_beam_size]
 
@@ -430,10 +440,9 @@ class Calculator:
             elif self.space[i][j]['error'] == 'non':  # starting point
                 break
             else:  # shouldn't reach here
-                print(
-                    'this should not happen, '
-                    'i = {i} , j = {j} , error = {error}'
-                    .format(i=i, j=j, error=self.space[i][j]['error']))
+                print('this should not happen, '
+                      'i = {i} , j = {j} , error = {error}'.format(
+                          i=i, j=j, error=self.space[i][j]['error']))
         return result
 
     def overall(self):
