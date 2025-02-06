@@ -45,6 +45,7 @@ pip install torch torchaudio
 
 ``` sh
 pip install -r requirements.txt
+pre-commit install  # for clean and tidy code
 ```
 
 ## Dataset
