@@ -16,6 +16,7 @@ from torch.utils.data import Dataset, DataLoader
 class CollateFunc(object):
     ''' Collate function for AudioDataset
     '''
+
     def __init__(self, feat_dim, feat_type, resample_rate):
         self.feat_dim = feat_dim
         self.resample_rate = resample_rate
@@ -30,8 +31,7 @@ class CollateFunc(object):
             value = item[1].strip().split(",")
             assert len(value) == 3 or len(value) == 1
             wav_path = value[0]
-            sample_rate = torchaudio.info(wav_path,
-                backend='sox').sample_rate
+            sample_rate = torchaudio.info(wav_path, backend='sox').sample_rate
             resample_rate = sample_rate
             # len(value) == 3 means segmented wav.scp,
             # len(value) == 1 means original wav.scp
@@ -73,6 +73,7 @@ class CollateFunc(object):
 
 
 class AudioDataset(Dataset):
+
     def __init__(self, data_file):
         self.items = []
         with codecs.open(data_file, 'r', encoding='utf-8') as f:

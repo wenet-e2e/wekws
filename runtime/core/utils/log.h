@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #ifndef UTILS_LOG_H_
 #define UTILS_LOG_H_
 
@@ -30,21 +29,21 @@ class Logger {
   Logger(int severity, const char* func, const char* file, int line) {
     severity_ = severity;
     switch (severity) {
-    case INFO:
-      ss_ << "INFO (";
-      break;
-    case WARNING:
-      ss_ << "WARNING (";
-      break;
-    case ERROR:
-      ss_ << "ERROR (";
-      break;
-    case FATAL:
-      ss_ << "FATAL (";
-      break;
-    default:
-      severity_ = FATAL;
-      ss_ << "FATAL (";
+      case INFO:
+        ss_ << "INFO (";
+        break;
+      case WARNING:
+        ss_ << "WARNING (";
+        break;
+      case ERROR:
+        ss_ << "ERROR (";
+        break;
+      case FATAL:
+        ss_ << "FATAL (";
+        break;
+      default:
+        severity_ = FATAL;
+        ss_ << "FATAL (";
     }
     ss_ << func << "():" << file << ':' << line << ") ";
   }
@@ -56,7 +55,8 @@ class Logger {
     }
   }
 
-  template <typename T> Logger& operator<<(const T &val) {
+  template <typename T>
+  Logger& operator<<(const T& val) {
     ss_ << val;
     return *this;
   }
@@ -66,17 +66,17 @@ class Logger {
   std::ostringstream ss_;
 };
 
-#define LOG(severity) ::wenet::Logger( \
-    ::wenet::severity, __func__, __FILE__, __LINE__)
+#define LOG(severity) \
+  ::wenet::Logger(::wenet::severity, __func__, __FILE__, __LINE__)
 
-#define CHECK(test) \
-do { \
-  if (!(test)) { \
-    std::cerr << "CHECK (" << __func__ << "():" << __FILE__ << ":" \
-              << __LINE__ << ") " << #test << std::endl; \
-    exit(-1); \
-  } \
-} while (0)
+#define CHECK(test)                                                  \
+  do {                                                               \
+    if (!(test)) {                                                   \
+      std::cerr << "CHECK (" << __func__ << "():" << __FILE__ << ":" \
+                << __LINE__ << ") " << #test << std::endl;           \
+      exit(-1);                                                      \
+    }                                                                \
+  } while (0)
 
 }  // namespace wenet
 

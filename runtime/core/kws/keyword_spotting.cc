@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include "kws/keyword_spotting.h"
 
 #include <iostream>
@@ -35,30 +34,27 @@ KeywordSpotting::KeywordSpotting(const std::string& model_path) {
   out_names_ = {"output", "r_cache"};
   auto metadata = session_->GetModelMetadata();
   Ort::AllocatorWithDefaultOptions allocator;
-  cache_dim_ = std::stoi(metadata.LookupCustomMetadataMap("cache_dim",
-                                                          allocator));
-  cache_len_ = std::stoi(metadata.LookupCustomMetadataMap("cache_len",
-                                                          allocator));
+  cache_dim_ =
+      std::stoi(metadata.LookupCustomMetadataMap("cache_dim", allocator));
+  cache_len_ =
+      std::stoi(metadata.LookupCustomMetadataMap("cache_len", allocator));
   std::cout << "Kws Model Info:" << std::endl
             << "\tcache_dim: " << cache_dim_ << std::endl
             << "\tcache_len: " << cache_len_ << std::endl;
   Reset();
 }
 
-
 void KeywordSpotting::Reset() {
   Ort::MemoryInfo memory_info =
-        Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
+      Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
   cache_.resize(cache_dim_ * cache_len_, 0.0);
   const int64_t cache_shape[] = {1, cache_dim_, cache_len_};
-  cache_ort_ = Ort::Value::CreateTensor<float>(
-      memory_info, cache_.data(), cache_.size(), cache_shape, 3);
+  cache_ort_ = Ort::Value::CreateTensor<float>(memory_info, cache_.data(),
+                                               cache_.size(), cache_shape, 3);
 }
 
-
-void KeywordSpotting::Forward(
-    const std::vector<std::vector<float>>& feats,
-    std::vector<std::vector<float>>* prob) {
+void KeywordSpotting::Forward(const std::vector<std::vector<float>>& feats,
+                              std::vector<std::vector<float>>* prob) {
   prob->clear();
   if (feats.size() == 0) return;
   Ort::MemoryInfo memory_info =
@@ -78,9 +74,9 @@ void KeywordSpotting::Forward(
   inputs.emplace_back(std::move(feats_ort));
   inputs.emplace_back(std::move(cache_ort_));
   // ort_outputs.size() == 2
-  std::vector<Ort::Value> ort_outputs = session_->Run(
-      Ort::RunOptions{nullptr}, in_names_.data(), inputs.data(),
-      inputs.size(), out_names_.data(), out_names_.size());
+  std::vector<Ort::Value> ort_outputs =
+      session_->Run(Ort::RunOptions{nullptr}, in_names_.data(), inputs.data(),
+                    inputs.size(), out_names_.data(), out_names_.size());
 
   // 3. Update cache
   cache_ort_ = std::move(ort_outputs[1]);
@@ -92,9 +88,9 @@ void KeywordSpotting::Forward(
   int output_dim = type_info.GetShape()[2];
   prob->resize(num_outputs);
   for (int i = 0; i < num_outputs; i++) {
-     (*prob)[i].resize(output_dim);
-     memcpy((*prob)[i].data(), data + i * output_dim,
-            sizeof(float) * output_dim);
+    (*prob)[i].resize(output_dim);
+    memcpy((*prob)[i].data(), data + i * output_dim,
+           sizeof(float) * output_dim);
   }
 }
 

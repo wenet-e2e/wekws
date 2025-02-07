@@ -33,6 +33,7 @@ from wekws.utils.checkpoint import load_checkpoint
 from wekws.model.loss import ctc_prefix_beam_search
 from tools.make_list import query_token_set, read_lexicon, read_token
 
+
 def get_args():
     parser = argparse.ArgumentParser(description='recognize with your model')
     parser.add_argument('--config', required=True, help='config file')
@@ -65,15 +66,22 @@ def get_args():
                         action='store_true',
                         default=False,
                         help='Use pinned memory buffers used for reading')
-    parser.add_argument('--keywords', type=str, default=None,
+    parser.add_argument('--keywords',
+                        type=str,
+                        default=None,
                         help='the keywords, split with comma(,)')
-    parser.add_argument('--token_file', type=str, default=None,
+    parser.add_argument('--token_file',
+                        type=str,
+                        default=None,
                         help='the path of tokens.txt')
-    parser.add_argument('--lexicon_file', type=str, default=None,
+    parser.add_argument('--lexicon_file',
+                        type=str,
+                        default=None,
                         help='the path of lexicon.txt')
 
     args = parser.parse_args()
     return args
+
 
 def is_sublist(main_list, check_list):
     if len(main_list) < len(check_list):
@@ -172,8 +180,7 @@ def main():
             for i in range(len(keys)):
                 key = keys[i]
                 score = logits[i][:lengths[i]]
-                hyps = ctc_prefix_beam_search(score,
-                                              lengths[i],
+                hyps = ctc_prefix_beam_search(score, lengths[i],
                                               keywords_idxset)
                 hit_keyword = None
                 hit_score = 1.0
@@ -201,11 +208,10 @@ def main():
                 if hit_keyword is not None:
                     fout.write('{} detected {} {:.3f}\n'.format(
                         key, hit_keyword, hit_score))
-                    logging.info(
-                        f"batch:{batch_idx}_{i} detect {hit_keyword} "
-                        f"in {key} from {start} to {end} frame. "
-                        f"duration {end - start}, "
-                        f"score {hit_score}, Activated.")
+                    logging.info(f"batch:{batch_idx}_{i} detect {hit_keyword} "
+                                 f"in {key} from {start} to {end} frame. "
+                                 f"duration {end - start}, "
+                                 f"score {hit_score}, Activated.")
                 else:
                     fout.write('{} rejected\n'.format(key))
                     logging.info(f"batch:{batch_idx}_{i} {key} Deactivated.")

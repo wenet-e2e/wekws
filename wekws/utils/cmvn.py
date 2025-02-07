@@ -44,6 +44,7 @@ def load_cmvn(json_cmvn_file):
     cmvn = np.array([means, variance])
     return cmvn
 
+
 def load_kaldi_cmvn(cmvn_file):
     """ Load the kaldi format cmvn stats file and no need to calculate
 
