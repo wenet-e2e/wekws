@@ -27,16 +27,18 @@ import torch
 import yaml
 from torch.utils.data import DataLoader
 
-from wekws.dataset.dataset import Dataset
+from wekws.dataset.init_dataset import init_dataset
 from wekws.model.kws_model import init_model
 from wekws.utils.checkpoint import load_checkpoint
 from wekws.model.loss import ctc_prefix_beam_search
-from tools.make_list import query_token_set, read_lexicon, read_token
+from wenet.text.char_tokenizer import CharTokenizer
+
 
 def get_args():
     parser = argparse.ArgumentParser(description='recognize with your model')
     parser.add_argument('--config', required=True, help='config file')
     parser.add_argument('--test_data', required=True, help='test data file')
+    parser.add_argument('--dict', default='./dict', help='dict dir')
     parser.add_argument('--gpu',
                         type=int,
                         default=-1,
@@ -97,7 +99,7 @@ def main():
     args = get_args()
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(levelname)s %(message)s')
-    os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
+    torch.cuda.set_device(args.gpu)
 
     with open(args.config, 'r') as fin:
         configs = yaml.load(fin, Loader=yaml.FullLoader)
@@ -105,13 +107,24 @@ def main():
     test_conf = copy.deepcopy(configs['dataset_conf'])
     test_conf['filter_conf']['max_length'] = 102400
     test_conf['filter_conf']['min_length'] = 0
+    test_conf['filter_conf']['token_max_length'] = 10240
+    test_conf['filter_conf']['token_min_length'] = 1
+    test_conf['filter_conf']['min_output_input_ratio'] = 1e-6
+    test_conf['filter_conf']['max_output_input_ratio'] = 1
     test_conf['speed_perturb'] = False
     test_conf['spec_aug'] = False
     test_conf['shuffle'] = False
-    test_conf['feature_extraction_conf']['dither'] = 0.0
+    feats_type = test_conf.get('feats_type', 'fbank')
+    test_conf[f'{feats_type}_conf']['dither'] = 0.0
     test_conf['batch_conf']['batch_size'] = args.batch_size
 
-    test_dataset = Dataset(args.test_data, test_conf)
+    tokenizer = CharTokenizer(f'{args.dict}/dict.txt',
+                              f'{args.dict}/words.txt',
+                              unk='<filler>',
+                              split_with_space=True)
+    test_dataset = init_dataset(data_list_file=args.test_data,
+                                conf=test_conf, tokenizer=tokenizer,
+                                split='test')
     test_data_loader = DataLoader(test_dataset,
                                   batch_size=None,
                                   pin_memory=args.pin_memory,
@@ -132,8 +145,6 @@ def main():
     model.eval()
     score_abs_path = os.path.abspath(args.score_file)
 
-    token_table = read_token(args.token_file)
-    lexicon_table = read_lexicon(args.lexicon_file)
     # 4. parse keywords tokens
     assert args.keywords is not None, 'at least one keyword is needed'
     logging.info(f"keywords is {args.keywords}, "
@@ -145,7 +156,8 @@ def main():
     keywords_strset = {'<blk>'}
     keywords_tokenmap = {'<blk>': 0}
     for keyword in keywords_list:
-        strs, indexes = query_token_set(keyword, token_table, lexicon_table)
+        strs, indexes = tokenizer.tokenize(' '.join(list(keyword)))
+        indexes = tuple(indexes)
         keywords_token[keyword] = {}
         keywords_token[keyword]['token_id'] = indexes
         keywords_token[keyword]['token_str'] = ''.join('%s ' % str(i)
@@ -162,8 +174,12 @@ def main():
     logging.info(f'Token set is: {token_print}')
 
     with torch.no_grad(), open(score_abs_path, 'w', encoding='utf8') as fout:
-        for batch_idx, batch in enumerate(test_data_loader):
-            keys, feats, target, lengths, target_lengths = batch
+        for batch_idx, batch_dict in enumerate(test_data_loader):
+            keys = batch_dict['keys']
+            feats = batch_dict['feats']
+            targets = batch_dict['target'][:, 0]
+            lengths = batch_dict['feats_lengths']
+            label_lengths = batch_dict['target_lengths']
             feats = feats.to(device)
             lengths = lengths.to(device)
             logits, _ = model(feats)

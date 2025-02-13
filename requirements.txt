@@ -15,3 +15,5 @@ pyflakes==2.2.0
 lmdb
 scipy
 tqdm
+langid
+pypinyin

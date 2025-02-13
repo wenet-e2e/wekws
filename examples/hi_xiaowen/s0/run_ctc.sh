@@ -43,9 +43,10 @@ fi
 if [ ${stage} -le -2 ] && [ ${stop_stage} -ge -2 ]; then
   echo "Preparing datasets..."
   mkdir -p dict
-  echo "<filler> -1" > dict/words.txt
-  echo "Hi_Xiaowen 0" >> dict/words.txt
-  echo "Nihao_Wenwen 1" >> dict/words.txt
+  echo "<FILLER> -1" > dict/dict.txt
+  echo "<HI_XIAOWEN> 0" >> dict/dict.txt
+  echo "<NIHAO_WENWEN> 1" >> dict/dict.txt
+  awk '{print $1}' dict/dict.txt > dict/words.txt
 
   for folder in train dev test; do
     mkdir -p data/$folder
@@ -53,7 +54,7 @@ if [ ${stage} -le -2 ] && [ ${stop_stage} -ge -2 ]; then
       mkdir -p data/${prefix}_$folder
       json_path=$download_dir/mobvoi_hotword_dataset_resources/${prefix}_$folder.json
       local/prepare_data.py $download_dir/mobvoi_hotword_dataset $json_path \
-        data/${prefix}_$folder
+        dict/dict.txt data/${prefix}_$folder
     done
     cat data/p_$folder/wav.scp data/n_$folder/wav.scp > data/$folder/wav.scp
     cat data/p_$folder/text data/n_$folder/text > data/$folder/text
@@ -74,8 +75,8 @@ if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
 
   # and we also copy the tokens and lexicon that used in
   # https://modelscope.cn/models/damo/speech_charctc_kws_phone-xiaoyun/summary
-  cp mobvoi_kws_transcription/tokens.txt data/tokens.txt
-  cp mobvoi_kws_transcription/lexicon.txt data/lexicon.txt
+  awk '{print $1, $2-1}' mobvoi_kws_transcription/tokens.txt > dict/dict.txt
+  echo '<SILENCE>' > dict/words.txt
 
 fi
 
@@ -90,9 +91,7 @@ if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
 
     # Here we use tokens.txt and lexicon.txt to convert txt into index
     tools/make_list.py data/$x/wav.scp data/$x/text \
-      data/$x/wav.dur data/$x/data.list  \
-      --token_file data/tokens.txt \
-      --lexicon_file data/lexicon.txt
+      data/$x/wav.dur data/$x/data.list
   done
 fi
 

@@ -120,7 +120,8 @@ def main():
     #                         noise_lmdb=args.noise_lmdb)
     tokenizer = CharTokenizer(f'{args.dict}/dict.txt',
                               f'{args.dict}/words.txt',
-                              unk='<filler>')
+                              unk='<filler>',
+                              split_with_space=True)
     train_dataset = init_dataset(data_list_file=args.train_data,
                                  conf=train_conf,
                                  tokenizer=tokenizer)

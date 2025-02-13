@@ -36,7 +36,8 @@ class Executor:
         for batch_idx, batch_dict in enumerate(data_loader):
             key = batch_dict['keys']
             feats = batch_dict['feats']
-            target = batch_dict['target'][:, 0]
+            target = batch_dict['target']
+            target = target[:, 0] if target.shape[1] == 1 else target
             feats_lengths = batch_dict['feats_lengths']
             label_lengths = batch_dict['target_lengths']
             feats = feats.to(device)
@@ -76,7 +77,8 @@ class Executor:
             for batch_idx, batch_dict in enumerate(data_loader):
                 key = batch_dict['keys']
                 feats = batch_dict['feats']
-                target = batch_dict['target'][:, 0]
+                target = batch_dict['target']
+                target = target[:, 0] if target.shape[1] == 1 else target
                 feats_lengths = batch_dict['feats_lengths']
                 label_lengths = batch_dict['target_lengths']
                 feats = feats.to(device)
