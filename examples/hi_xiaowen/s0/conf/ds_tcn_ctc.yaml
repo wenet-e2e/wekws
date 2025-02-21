@@ -26,7 +26,7 @@ dataset_conf:
         shuffle_size: 1500
     sort: false
     batch_conf:
-        batch_size: 64
+        batch_size: 256
 
 model:
     hidden_dim: 256
