@@ -21,8 +21,8 @@
 #include <vector>
 
 #include "frontend/fbank.h"
-#include "utils/log.h"
 #include "utils/blocking_queue.h"
+#include "utils/log.h"
 
 namespace wenet {
 

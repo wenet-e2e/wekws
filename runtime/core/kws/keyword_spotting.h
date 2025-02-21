@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #ifndef KWS_KEYWORD_SPOTTING_H_
 #define KWS_KEYWORD_SPOTTING_H_
 
@@ -54,7 +53,6 @@ class KeywordSpotting {
   Ort::Value cache_ort_{nullptr};
   std::vector<float> cache_;
 };
-
 
 }  // namespace wekws
 

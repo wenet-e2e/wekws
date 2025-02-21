@@ -24,6 +24,7 @@ from wekws.dataset.lmdb_data import LmdbData
 
 
 class Processor(IterableDataset):
+
     def __init__(self, source, f, *args, **kw):
         assert callable(f)
         self.source = source
@@ -48,6 +49,7 @@ class Processor(IterableDataset):
 
 
 class DistributedSampler:
+
     def __init__(self, shuffle=True, partition=True):
         self.epoch = -1
         self.update()
@@ -96,6 +98,7 @@ class DistributedSampler:
 
 
 class DataList(IterableDataset):
+
     def __init__(self, lists, shuffle=True, partition=True):
         self.lists = lists
         self.sampler = DistributedSampler(shuffle, partition)
@@ -113,7 +116,8 @@ class DataList(IterableDataset):
             yield data
 
 
-def Dataset(data_list_file, conf,
+def Dataset(data_list_file,
+            conf,
             partition=True,
             reverb_lmdb=None,
             noise_lmdb=None):
@@ -144,12 +148,12 @@ def Dataset(data_list_file, conf,
         dataset = Processor(dataset, processor.speed_perturb)
     if reverb_lmdb and conf.get('reverb_prob', 0) > 0:
         reverb_data = LmdbData(reverb_lmdb)
-        dataset = Processor(dataset, processor.add_reverb,
-                            reverb_data, conf['reverb_prob'])
+        dataset = Processor(dataset, processor.add_reverb, reverb_data,
+                            conf['reverb_prob'])
     if noise_lmdb and conf.get('noise_prob', 0) > 0:
         noise_data = LmdbData(noise_lmdb)
-        dataset = Processor(dataset, processor.add_noise,
-                            noise_data, conf['noise_prob'])
+        dataset = Processor(dataset, processor.add_noise, noise_data,
+                            conf['noise_prob'])
     feature_extraction_conf = conf.get('feature_extraction_conf', {})
     if feature_extraction_conf['feature_type'] == 'mfcc':
         dataset = Processor(dataset, processor.compute_mfcc,

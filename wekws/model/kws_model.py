@@ -40,6 +40,7 @@ class KWSModel(nn.Module):
         nn.Sigmoid for wakeup word
         nn.Identity for speech command dataset
     """
+
     def __init__(
         self,
         idim: int,
@@ -74,11 +75,11 @@ class KWSModel(nn.Module):
         x = self.activation(x)
         return x, out_cache
 
-    def forward_softmax(self,
-                        x: torch.Tensor,
-                        in_cache: torch.Tensor = torch.zeros(
-                            0, 0, 0, dtype=torch.float)
-                        ) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward_softmax(
+        self,
+        x: torch.Tensor,
+        in_cache: torch.Tensor = torch.zeros(0, 0, 0, dtype=torch.float)
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         if self.global_cmvn is not None:
             x = self.global_cmvn(x)
         x = self.preprocessing(x)

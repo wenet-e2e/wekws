@@ -67,28 +67,34 @@ def get_args():
                         action='store_true',
                         default=False,
                         help='Use pinned memory buffers used for reading')
-    parser.add_argument('--keywords', type=str, default=None,
+    parser.add_argument('--keywords',
+                        type=str,
+                        default=None,
                         help='the keywords, split with comma(,)')
-    parser.add_argument('--token_file', type=str, default=None,
+    parser.add_argument('--token_file',
+                        type=str,
+                        default=None,
                         help='the path of tokens.txt')
-    parser.add_argument('--lexicon_file', type=str, default=None,
+    parser.add_argument('--lexicon_file',
+                        type=str,
+                        default=None,
                         help='the path of lexicon.txt')
     parser.add_argument('--score_beam_size',
                         default=3,
                         type=int,
                         help='The first prune beam, f'
-                             'ilter out those frames with low scores.')
+                        'ilter out those frames with low scores.')
     parser.add_argument('--path_beam_size',
                         default=20,
                         type=int,
                         help='The second prune beam, '
-                             'keep only path_beam_size candidates.')
+                        'keep only path_beam_size candidates.')
     parser.add_argument('--threshold',
                         type=float,
                         default=0.0,
                         help='The threshold of kws. '
-                             'If ctc_search probs exceed this value,'
-                             'the keyword will be activated.')
+                        'If ctc_search probs exceed this value,'
+                        'the keyword will be activated.')
     parser.add_argument('--min_frames',
                         default=5,
                         type=int,
@@ -230,7 +236,7 @@ def main():
                 # 2. CTC beam search step by step
                 for t in range(0, maxlen):
                     probs = ctc_probs[t]  # (vocab_size,)
-                    t *= downsampling_factor   # the real time
+                    t *= downsampling_factor  # the real time
                     # key: prefix, value (pb, pnb), default value(-inf, -inf)
                     next_hyps = defaultdict(lambda: (0.0, 0.0, []))
 
@@ -240,8 +246,8 @@ def main():
                     # filter prob score that is too small
                     filter_probs = []
                     filter_index = []
-                    for prob, idx in zip(
-                            top_k_probs.tolist(), top_k_index.tolist()):
+                    for prob, idx in zip(top_k_probs.tolist(),
+                                         top_k_index.tolist()):
                         if keywords_idxset is not None:
                             if prob > 0.05 and idx in keywords_idxset:
                                 filter_probs.append(prob)
@@ -265,7 +271,8 @@ def main():
                                 nodes = cur_nodes.copy()
                                 next_hyps[prefix] = (n_pb, n_pnb, nodes)
                             elif s == last:
-                                if not math.isclose(pnb, 0.0, abs_tol=0.000001):
+                                if not math.isclose(pnb, 0.0,
+                                                    abs_tol=0.000001):
                                     # Update *ss -> *s;
                                     n_pb, n_pnb, nodes = next_hyps[prefix]
                                     n_pnb = n_pnb + pnb * ps
@@ -278,15 +285,15 @@ def main():
 
                                 if not math.isclose(pb, 0.0, abs_tol=0.000001):
                                     # Update *s-s -> *ss, - is for blank
-                                    n_prefix = prefix + (s,)
+                                    n_prefix = prefix + (s, )
                                     n_pb, n_pnb, nodes = next_hyps[n_prefix]
                                     n_pnb = n_pnb + pb * ps
                                     nodes = cur_nodes.copy()
-                                    nodes.append(dict(
-                                        token=s, frame=t, prob=ps))
+                                    nodes.append(
+                                        dict(token=s, frame=t, prob=ps))
                                     next_hyps[n_prefix] = (n_pb, n_pnb, nodes)
                             else:
-                                n_prefix = prefix + (s,)
+                                n_prefix = prefix + (s, )
                                 n_pb, n_pnb, nodes = next_hyps[n_prefix]
                                 if nodes:
                                     # update frame and prob
@@ -295,19 +302,19 @@ def main():
                                         # nodes[-1]['frame'] = t
                                         # avoid change other beam has this node.
                                         nodes.pop()
-                                        nodes.append(dict(
-                                            token=s, frame=t, prob=ps))
+                                        nodes.append(
+                                            dict(token=s, frame=t, prob=ps))
                                 else:
                                     nodes = cur_nodes.copy()
-                                    nodes.append(dict(
-                                        token=s, frame=t, prob=ps))
+                                    nodes.append(
+                                        dict(token=s, frame=t, prob=ps))
                                 n_pnb = n_pnb + pb * ps + pnb * ps
                                 next_hyps[n_prefix] = (n_pb, n_pnb, nodes)
 
                     # 2.2 Second beam prune
-                    next_hyps = sorted(
-                        next_hyps.items(),
-                        key=lambda x: (x[1][0] + x[1][1]), reverse=True)
+                    next_hyps = sorted(next_hyps.items(),
+                                       key=lambda x: (x[1][0] + x[1][1]),
+                                       reverse=True)
 
                     cur_hyps = next_hyps[:args.path_beam_size]
 
@@ -325,8 +332,8 @@ def main():
                             if offset != -1:
                                 hit_keyword = word
                                 start = prefix_nodes[offset]['frame']
-                                end = prefix_nodes[
-                                    offset + len(lab) - 1]['frame']
+                                end = prefix_nodes[offset + len(lab) -
+                                                   1]['frame']
                                 for idx in range(offset, offset + len(lab)):
                                     hit_score *= prefix_nodes[idx]['prob']
                                 break

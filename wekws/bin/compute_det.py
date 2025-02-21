@@ -56,10 +56,15 @@ if __name__ == '__main__':
     parser.add_argument('--test_data', required=True, help='label file')
     parser.add_argument('--keyword', required=True, help='keyword label')
     parser.add_argument('--score_file', required=True, help='score file')
-    parser.add_argument('--step', type=float, default=0.01,
+    parser.add_argument('--step',
+                        type=float,
+                        default=0.01,
                         help='threshold step')
-    parser.add_argument('--window_shift', type=int, default=50,
-                        help='window_shift is used to skip the frames after triggered')
+    parser.add_argument(
+        '--window_shift',
+        type=int,
+        default=50,
+        help='window_shift is used to skip the frames after triggered')
     parser.add_argument('--stats_file',
                         required=True,
                         help='false reject/alarm stats file')

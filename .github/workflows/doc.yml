@@ -8,13 +8,6 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
-    # install sphinx related package and build sphinx files
-    - uses: ammaraskar/sphinx-action@master
-      with:
-        docs-folder: "docs/"
-        pre-build-command: "pip install sphinx-markdown-tables nbsphinx jinja2 recommonmark sphinx_rtd_theme"
-
-
     # add .nojekyll to notice Pages use the _* dirs
     - name: copy the generated site
       if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}

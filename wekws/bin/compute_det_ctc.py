@@ -26,6 +26,7 @@ import pypinyin  # for Chinese Character
 from wenet.text.char_tokenizer import CharTokenizer
 
 
+
 def split_mixed_label(input_str):
     tokens = []
     s = input_str.lower()
@@ -44,6 +45,7 @@ def space_mixed_label(input_str):
     splits = split_mixed_label(input_str)
     space_str = ''.join(f'{sub} ' for sub in splits)
     return space_str.strip()
+
 
 def load_label_and_score(keywords_list, label_file, score_file, true_keywords):
     score_table = {}
@@ -121,6 +123,7 @@ def load_label_and_score(keywords_list, label_file, score_file, true_keywords):
 
     return keyword_filler_table
 
+
 def load_stats_file(stats_file):
     values = []
     with open(stats_file, 'r', encoding='utf8') as fin:
@@ -130,6 +133,7 @@ def load_stats_file(stats_file):
             values.append([float(fa_per_hour), float(frr) * 100])
     values.reverse()
     return np.array(values)
+
 
 def plot_det(dets_dir, figure_file, xlim=5, x_step=1, ylim=35, y_step=5):
     det_title = "DetCurve"
@@ -155,42 +159,49 @@ def plot_det(dets_dir, figure_file, xlim=5, x_step=1, ylim=35, y_step=5):
     plt.legend(loc='best', fontsize=6)
     plt.savefig(figure_file)
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='compute det curve')
     parser.add_argument('--test_data', required=True, help='label file')
     parser.add_argument('--dict', default='./dict', help='dict dir')
     parser.add_argument('--keywords', type=str, default=None,
                         help='keywords, split with comma(,)')
-    parser.add_argument('--token_file', type=str, default=None,
+    parser.add_argument('--token_file',
+                        type=str,
+                        default=None,
                         help='the path of tokens.txt')
-    parser.add_argument('--lexicon_file', type=str, default=None,
+    parser.add_argument('--lexicon_file',
+                        type=str,
+                        default=None,
                         help='the path of lexicon.txt')
     parser.add_argument('--score_file', required=True, help='score file')
-    parser.add_argument('--step', type=float, default=0.01,
+    parser.add_argument('--step',
+                        type=float,
+                        default=0.01,
                         help='threshold step')
-    parser.add_argument('--window_shift', type=int, default=50,
+    parser.add_argument('--window_shift',
+                        type=int,
+                        default=50,
                         help='window_shift is used to '
-                             'skip the frames after triggered')
+                        'skip the frames after triggered')
     parser.add_argument('--stats_dir',
                         required=False,
                         default=None,
                         help='false reject/alarm stats dir, '
-                             'default in score_file')
+                        'default in score_file')
     parser.add_argument('--det_curve_path',
                         required=False,
                         default=None,
                         help='det curve path, default is stats_dir/det.png')
-    parser.add_argument(
-        '--xlim',
-        type=int,
-        default=5,
-        help='xlim：range of x-axis, x is false alarm per hour')
+    parser.add_argument('--xlim',
+                        type=int,
+                        default=5,
+                        help='xlim：range of x-axis, x is false alarm per hour')
     parser.add_argument('--x_step', type=int, default=1, help='step on x-axis')
-    parser.add_argument(
-        '--ylim',
-        type=int,
-        default=35,
-        help='ylim：range of y-axis, y is false rejection rate')
+    parser.add_argument('--ylim',
+                        type=int,
+                        default=35,
+                        help='ylim：range of y-axis, y is false rejection rate')
     parser.add_argument('--y_step', type=int, default=5, help='step on y-axis')
 
     args = parser.parse_args()
@@ -211,8 +222,8 @@ if __name__ == '__main__':
         strs, indexes = tokenizer.tokenize(' '.join(list(keyword)))
         true_keywords[keyword] = ''.join(strs)
 
-    keyword_filler_table = load_label_and_score(
-        keywords_list, args.test_data, args.score_file, true_keywords)
+    keyword_filler_table = load_label_and_score(keywords_list, args.test_data,
+                                                args.score_file, true_keywords)
 
     for keyword in keywords_list:
         keyword = true_keywords[keyword]
@@ -231,7 +242,7 @@ if __name__ == '__main__':
             keyword_dur / 3600.0, keyword_num))
         logging.info('  Filler duration: {} Hours'.format(filler_dur / 3600.0))
 
-        if args.stats_dir :
+        if args.stats_dir:
             stats_dir = args.stats_dir
         else:
             stats_dir = os.path.dirname(args.score_file)
@@ -252,8 +263,8 @@ if __name__ == '__main__':
 
                 num_false_alarm = 0
                 # transverse the all filler_table
-                for key, confi in keyword_filler_table[
-                        keyword]['filler_table'].items():
+                for key, confi in keyword_filler_table[keyword][
+                        'filler_table'].items():
                     if confi >= threshold:
                         num_false_alarm += 1
                         # print(f'false alarm: {keyword}, {key}, {confi}')
@@ -268,9 +279,9 @@ if __name__ == '__main__':
                 fout.write('{:.3f} {:.6f} {:.6f}\n'.format(
                     threshold, false_alarm_per_hour, false_reject_rate))
                 threshold += args.step
-    if args.det_curve_path :
+    if args.det_curve_path:
         det_curve_path = args.det_curve_path
     else:
         det_curve_path = os.path.join(stats_dir, 'det.png')
-    plot_det(stats_dir, det_curve_path,
-             args.xlim, args.x_step, args.ylim, args.y_step)
+    plot_det(stats_dir, det_curve_path, args.xlim, args.x_step, args.ylim,
+             args.y_step)

@@ -130,10 +130,10 @@ def main():
                 for keyword_i in range(num_keywords):
                     keyword = tokenizer.ids2tokens([keyword_i])[0]
                     keyword_scores = score[:, keyword_i]
-                    score_frames = ' '.join(['{:.6f}'.format(x)
-                                            for x in keyword_scores.tolist()])
-                    fout.write('{} {} {}\n'.format(
-                        key, keyword, score_frames))
+                    score_frames = ' '.join(
+                        ['{:.6f}'.format(x) for x in keyword_scores.tolist()])
+                    fout.write('{} {} {}\n'.format(key, keyword,
+                                                   score_frames))
             if batch_idx % 10 == 0:
                 print('Progress batch {}'.format(batch_idx))
                 sys.stdout.flush()

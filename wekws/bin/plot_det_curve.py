@@ -30,14 +30,8 @@ def load_stats_file(stats_file):
     return np.array(values)
 
 
-def plot_det_curve(
-        keywords,
-        stats_dir,
-        figure_file,
-        xlim,
-        x_step,
-        ylim,
-        y_step):
+def plot_det_curve(keywords, stats_dir, figure_file, xlim, x_step, ylim,
+                   y_step):
     plt.figure(dpi=200)
     plt.rcParams['xtick.direction'] = 'in'
     plt.rcParams['ytick.direction'] = 'in'
@@ -61,26 +55,24 @@ def plot_det_curve(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='plot det curve')
-    parser.add_argument(
-        '--keywords_dict',
-        required=True,
-        help='path to the dictionary of keywords')
-    parser.add_argument('--stats_dir', required=True, help='dir of stats files')
-    parser.add_argument(
-        '--figure_file',
-        required=True,
-        help='path to save det curve')
-    parser.add_argument(
-        '--xlim',
-        type=int,
-        default=5,
-        help='xlim：range of x-axis, x is false alarm per hour')
+    parser.add_argument('--keywords_dict',
+                        required=True,
+                        help='path to the dictionary of keywords')
+    parser.add_argument('--stats_dir',
+                        required=True,
+                        help='dir of stats files')
+    parser.add_argument('--figure_file',
+                        required=True,
+                        help='path to save det curve')
+    parser.add_argument('--xlim',
+                        type=int,
+                        default=5,
+                        help='xlim：range of x-axis, x is false alarm per hour')
     parser.add_argument('--x_step', type=int, default=1, help='step on x-axis')
-    parser.add_argument(
-        '--ylim',
-        type=int,
-        default=35,
-        help='ylim：range of y-axis, y is false rejection rate')
+    parser.add_argument('--ylim',
+                        type=int,
+                        default=35,
+                        help='ylim：range of y-axis, y is false rejection rate')
     parser.add_argument('--y_step', type=int, default=5, help='step on y-axis')
 
     args = parser.parse_args()
@@ -92,11 +84,5 @@ if __name__ == '__main__':
             if int(index) > -1:
                 keywords.append(keyword)
 
-    plot_det_curve(
-        keywords,
-        args.stats_dir,
-        args.figure_file,
-        args.xlim,
-        args.x_step,
-        args.ylim,
-        args.y_step)
+    plot_det_curve(keywords, args.stats_dir, args.figure_file, args.xlim,
+                   args.x_step, args.ylim, args.y_step)

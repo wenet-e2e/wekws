@@ -58,17 +58,12 @@ def main():
                         dtype=torch.float)
     if is_fsmn:
         cache = cache.unsqueeze(-1).expand(-1, -1, -1, num_layers)
+    dynamic_axes = {'input': {1: 'T'}, 'output': {1: 'T'}}
     torch.onnx.export(model, (dummy_input, cache),
                       args.onnx_model,
                       input_names=['input', 'cache'],
                       output_names=['output', 'r_cache'],
-                      dynamic_axes={
-                          'input': {
-                              1: 'T'
-                          },
-                          'output': {
-                              1: 'T'
-                          }},
+                      dynamic_axes=dynamic_axes,
                       opset_version=13,
                       verbose=False,
                       do_constant_folding=True)

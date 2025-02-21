@@ -21,6 +21,7 @@ import torch.nn.functional as F
 
 
 class Block(nn.Module):
+
     def __init__(self,
                  channel: int,
                  kernel_size: int,
@@ -64,6 +65,7 @@ class Block(nn.Module):
 
 
 class CnnBlock(Block):
+
     def __init__(self,
                  channel: int,
                  kernel_size: int,
@@ -89,6 +91,7 @@ class CnnBlock(Block):
 class DsCnnBlock(Block):
     """ Depthwise Separable Convolution
     """
+
     def __init__(self,
                  channel: int,
                  kernel_size: int,
@@ -117,6 +120,7 @@ class DsCnnBlock(Block):
 
 
 class TCN(nn.Module):
+
     def __init__(self,
                  num_layers: int,
                  channel: int,

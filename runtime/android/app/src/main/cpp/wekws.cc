@@ -82,18 +82,18 @@ void set_input_finished() {
 // }
 
 void start_spot() {
-    std::vector<std::vector<float>> feats;
-    feature_pipeline->Read(80, &feats);
-    std::vector<std::vector<float>> prob;
-    spotter->Forward(feats, &prob);
-    float max_prob = 0.0;
-    for (int t = 0; t < prob.size(); t++) {
-      for (int j = 0; j < prob[t].size(); j++) {
-        max_prob = std::max(prob[t][j], max_prob);
-      }
+  std::vector<std::vector<float>> feats;
+  feature_pipeline->Read(80, &feats);
+  std::vector<std::vector<float>> prob;
+  spotter->Forward(feats, &prob);
+  float max_prob = 0.0;
+  for (int t = 0; t < prob.size(); t++) {
+    for (int j = 0; j < prob[t].size(); j++) {
+      max_prob = std::max(prob[t][j], max_prob);
     }
-    result = std::to_string(offset) + " prob: " + std::to_string(max_prob);
-    offset += prob.size();
+  }
+  result = std::to_string(offset) + " prob: " + std::to_string(max_prob);
+  offset += prob.size();
 }
 
 jstring get_result(JNIEnv* env, jobject) {

@@ -17,3 +17,4 @@ scipy
 tqdm
 langid
 pypinyin
+pre-commit==3.5.0
