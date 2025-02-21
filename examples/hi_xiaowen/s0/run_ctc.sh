@@ -23,7 +23,7 @@ else
   score_checkpoint=$dir/final.pt
 fi
 
-download_dir=/mnt/52_disk/back/DuJing/data/nihaowenwen # your data dir
+download_dir=./data/local # your data dir
 
 . tools/parse_options.sh || exit 1;
 window_shift=50
@@ -76,8 +76,10 @@ if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
   # and we also copy the tokens and lexicon that used in
   # https://modelscope.cn/models/damo/speech_charctc_kws_phone-xiaoyun/summary
   awk '{print $1, $2-1}' mobvoi_kws_transcription/tokens.txt > dict/dict.txt
+  sed -i 's/& 1/<filler> 1/' dict/dict.txt
   echo '<SILENCE>' > dict/words.txt
-
+  echo '<EPS>' >> dict/words.txt
+  echo '<BLK>' >> dict/words.txt
 fi
 
 if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
@@ -180,7 +182,7 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
   fi
   result_dir=$dir/test_$(basename $score_checkpoint)
   mkdir -p $result_dir
-  stream=true  # we detect keyword online with ctc_prefix_beam_search
+  stream=false  # we detect keyword online with ctc_prefix_beam_search
   score_prefix=""
   if $stream ; then
     score_prefix=stream_

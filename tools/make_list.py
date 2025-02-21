@@ -17,6 +17,21 @@
 
 import argparse
 import json
+import re
+
+
+def split_mixed_label(input_str):
+    tokens = []
+    s = input_str
+    while len(s) > 0:
+        match = re.match(r'[A-Za-z!?,<>_()\']+', s)
+        if match is not None:
+            word = match.group(0)
+        else:
+            word = s[0:1]
+        tokens.append(word)
+        s = s.replace(word, '', 1).strip(' ')
+    return tokens
 
 
 if __name__ == '__main__':
@@ -49,7 +64,7 @@ if __name__ == '__main__':
             if len(arr) < 2:
                 txt = '<SILENCE>'
             else:
-                txt = ' '.join(list(arr[1]))
+                txt = ' '.join(split_mixed_label(arr[1]))
             assert key in wav_table
             wav = wav_table[key]
             assert key in duration_table
