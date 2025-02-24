@@ -110,10 +110,6 @@ def main():
     cv_conf['spec_aug'] = False
     cv_conf['shuffle'] = False
 
-    # train_dataset = Dataset(args.train_data,
-    #                         train_conf,
-    #                         reverb_lmdb=args.reverb_lmdb,
-    #                         noise_lmdb=args.noise_lmdb)
     tokenizer = CharTokenizer(f'{args.dict}/dict.txt',
                               f'{args.dict}/words.txt',
                               unk='<filler>',
