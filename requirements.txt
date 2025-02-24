@@ -18,3 +18,4 @@ tqdm
 langid
 pypinyin
 pre-commit==3.5.0
+git+https://github.com/wenet-e2e/wenet.git@1a94771df418325fd335b0b53776f83d74a8111d
