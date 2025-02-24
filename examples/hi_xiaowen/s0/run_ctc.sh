@@ -23,7 +23,7 @@ else
   score_checkpoint=$dir/final.pt
 fi
 
-download_dir=/mnt/52_disk/back/DuJing/data/nihaowenwen # your data dir
+download_dir=./data/local # your data dir
 
 . tools/parse_options.sh || exit 1;
 window_shift=50
@@ -43,9 +43,10 @@ fi
 if [ ${stage} -le -2 ] && [ ${stop_stage} -ge -2 ]; then
   echo "Preparing datasets..."
   mkdir -p dict
-  echo "<filler> -1" > dict/words.txt
-  echo "Hi_Xiaowen 0" >> dict/words.txt
-  echo "Nihao_Wenwen 1" >> dict/words.txt
+  echo "<FILLER> -1" > dict/dict.txt
+  echo "<HI_XIAOWEN> 0" >> dict/dict.txt
+  echo "<NIHAO_WENWEN> 1" >> dict/dict.txt
+  awk '{print $1}' dict/dict.txt > dict/words.txt
 
   for folder in train dev test; do
     mkdir -p data/$folder
@@ -53,7 +54,7 @@ if [ ${stage} -le -2 ] && [ ${stop_stage} -ge -2 ]; then
       mkdir -p data/${prefix}_$folder
       json_path=$download_dir/mobvoi_hotword_dataset_resources/${prefix}_$folder.json
       local/prepare_data.py $download_dir/mobvoi_hotword_dataset $json_path \
-        data/${prefix}_$folder
+        dict/dict.txt data/${prefix}_$folder
     done
     cat data/p_$folder/wav.scp data/n_$folder/wav.scp > data/$folder/wav.scp
     cat data/p_$folder/text data/n_$folder/text > data/$folder/text
@@ -74,9 +75,11 @@ if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
 
   # and we also copy the tokens and lexicon that used in
   # https://modelscope.cn/models/damo/speech_charctc_kws_phone-xiaoyun/summary
-  cp mobvoi_kws_transcription/tokens.txt data/tokens.txt
-  cp mobvoi_kws_transcription/lexicon.txt data/lexicon.txt
-
+  awk '{print $1, $2-1}' mobvoi_kws_transcription/tokens.txt > dict/dict.txt
+  sed -i 's/& 1/<filler> 1/' dict/dict.txt
+  echo '<SILENCE>' > dict/words.txt
+  echo '<EPS>' >> dict/words.txt
+  echo '<BLK>' >> dict/words.txt
 fi
 
 if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
@@ -90,9 +93,7 @@ if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
 
     # Here we use tokens.txt and lexicon.txt to convert txt into index
     tools/make_list.py data/$x/wav.scp data/$x/text \
-      data/$x/wav.dur data/$x/data.list  \
-      --token_file data/tokens.txt \
-      --lexicon_file data/lexicon.txt
+      data/$x/wav.dur data/$x/data.list
   done
 fi
 
@@ -181,7 +182,7 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
   fi
   result_dir=$dir/test_$(basename $score_checkpoint)
   mkdir -p $result_dir
-  stream=true  # we detect keyword online with ctc_prefix_beam_search
+  stream=false  # we detect keyword online with ctc_prefix_beam_search
   score_prefix=""
   if $stream ; then
     score_prefix=stream_

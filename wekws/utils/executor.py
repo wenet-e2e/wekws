@@ -34,8 +34,13 @@ class Executor:
         epoch = args.get('epoch', 0)
         min_duration = args.get('min_duration', 0)
 
-        for batch_idx, batch in enumerate(data_loader):
-            key, feats, target, feats_lengths, label_lengths = batch
+        for batch_idx, batch_dict in enumerate(data_loader):
+            key = batch_dict['keys']
+            feats = batch_dict['feats']
+            target = batch_dict['target']
+            target = target[:, 0] if target.shape[1] == 1 else target
+            feats_lengths = batch_dict['feats_lengths']
+            label_lengths = batch_dict['target_lengths']
             feats = feats.to(device)
             target = target.to(device)
             feats_lengths = feats_lengths.to(device)
@@ -73,8 +78,13 @@ class Executor:
         total_loss = 0.0
         total_acc = 0.0
         with torch.no_grad():
-            for batch_idx, batch in enumerate(data_loader):
-                key, feats, target, feats_lengths, label_lengths = batch
+            for batch_idx, batch_dict in enumerate(data_loader):
+                key = batch_dict['keys']
+                feats = batch_dict['feats']
+                target = batch_dict['target']
+                target = target[:, 0] if target.shape[1] == 1 else target
+                feats_lengths = batch_dict['feats_lengths']
+                label_lengths = batch_dict['target_lengths']
                 feats = feats.to(device)
                 target = target.to(device)
                 feats_lengths = feats_lengths.to(device)

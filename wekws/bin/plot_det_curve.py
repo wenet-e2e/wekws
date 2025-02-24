@@ -38,7 +38,7 @@ def plot_det_curve(keywords, stats_dir, figure_file, xlim, x_step, ylim,
     plt.rcParams['font.size'] = 12
 
     for index, keyword in enumerate(keywords):
-        stats_file = os.path.join(stats_dir, 'stats.' + str(index) + '.txt')
+        stats_file = os.path.join(stats_dir, 'stats.' + keyword + '.txt')
         values = load_stats_file(stats_file)
         plt.plot(values[:, 0], values[:, 1], label=keyword)
 

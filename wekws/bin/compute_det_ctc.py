@@ -23,7 +23,8 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pypinyin  # for Chinese Character
-from tools.make_list import query_token_set, read_lexicon, read_token
+from wenet.text.char_tokenizer import CharTokenizer
+
 
 
 def split_mixed_label(input_str):
@@ -87,11 +88,11 @@ def load_label_and_score(keywords_list, label_file, score_file, true_keywords):
     for obj in label_lists:
         assert 'key' in obj
         assert 'wav' in obj
-        assert 'tok' in obj  # here we use the tokens
+        assert 'txt' in obj   # here we use the tokens
         assert 'duration' in obj
 
         key = obj['key']
-        txt = "".join(obj['tok'])
+        txt = obj['txt']
         txt = space_mixed_label(txt)
         txt_regstr_lrblk = ' ' + txt + ' '
         duration = obj['duration']
@@ -162,9 +163,8 @@ def plot_det(dets_dir, figure_file, xlim=5, x_step=1, ylim=35, y_step=5):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='compute det curve')
     parser.add_argument('--test_data', required=True, help='label file')
-    parser.add_argument('--keywords',
-                        type=str,
-                        default=None,
+    parser.add_argument('--dict', default='./dict', help='dict dir')
+    parser.add_argument('--keywords', type=str, default=None,
                         help='keywords, split with comma(,)')
     parser.add_argument('--token_file',
                         type=str,
@@ -212,11 +212,14 @@ if __name__ == '__main__':
     keywords = args.keywords.encode('utf-8').decode('unicode_escape')
     keywords_list = keywords.strip().split(',')
 
-    token_table = read_token(args.token_file)
-    lexicon_table = read_lexicon(args.lexicon_file)
+    tokenizer = CharTokenizer(f'{args.dict}/dict.txt',
+                              f'{args.dict}/words.txt',
+                              unk='<filler>',
+                              split_with_space=True)
+
     true_keywords = {}
     for keyword in keywords_list:
-        strs, indexes = query_token_set(keyword, token_table, lexicon_table)
+        strs, indexes = tokenizer.tokenize(' '.join(list(keyword)))
         true_keywords[keyword] = ''.join(strs)
 
     keyword_filler_table = load_label_and_score(keywords_list, args.test_data,

@@ -25,15 +25,17 @@ import torch
 import yaml
 from torch.utils.data import DataLoader
 
-from wekws.dataset.dataset import Dataset
+from wekws.dataset.init_dataset import init_dataset
 from wekws.model.kws_model import init_model
 from wekws.utils.checkpoint import load_checkpoint
+from wenet.text.char_tokenizer import CharTokenizer
 
 
 def get_args():
     parser = argparse.ArgumentParser(description='recognize with your model')
     parser.add_argument('--config', required=True, help='config file')
     parser.add_argument('--test_data', required=True, help='test data file')
+    parser.add_argument('--dict', default='./dict', help='dict dir')
     parser.add_argument('--gpu',
                         type=int,
                         default=-1,
@@ -81,10 +83,16 @@ def main():
     test_conf['speed_perturb'] = False
     test_conf['spec_aug'] = False
     test_conf['shuffle'] = False
-    test_conf['feature_extraction_conf']['dither'] = 0.0
+    feats_type = test_conf.get('feats_type', 'fbank')
+    test_conf[f'{feats_type}_conf']['dither'] = 0.0
     test_conf['batch_conf']['batch_size'] = args.batch_size
 
-    test_dataset = Dataset(args.test_data, test_conf)
+    tokenizer = CharTokenizer(f'{args.dict}/dict.txt',
+                              f'{args.dict}/words.txt',
+                              unk='<filler>')
+    test_dataset = init_dataset(data_list_file=args.test_data,
+                                conf=test_conf, tokenizer=tokenizer,
+                                split='test')
     test_data_loader = DataLoader(test_dataset,
                                   batch_size=None,
                                   pin_memory=args.pin_memory,
@@ -105,21 +113,26 @@ def main():
     model.eval()
     score_abs_path = os.path.abspath(args.score_file)
     with torch.no_grad(), open(score_abs_path, 'w', encoding='utf8') as fout:
-        for batch_idx, batch in enumerate(test_data_loader):
-            keys, feats, target, lengths, target_lengths = batch
+        for batch_idx, batch_dict in enumerate(test_data_loader):
+            keys = batch_dict['keys']
+            feats = batch_dict['feats']
+            targets = batch_dict['target'][:, 0]
+            feats_lengths = batch_dict['feats_lengths']
+            label_lengths = batch_dict['target_lengths']
             feats = feats.to(device)
-            lengths = lengths.to(device)
+            feats_lengths = feats_lengths.to(device)
             logits, _ = model(feats)
             num_keywords = logits.shape[2]
             logits = logits.cpu()
             for i in range(len(keys)):
                 key = keys[i]
-                score = logits[i][:lengths[i]]
+                score = logits[i][:feats_lengths[i]]
                 for keyword_i in range(num_keywords):
+                    keyword = tokenizer.ids2tokens([keyword_i])[0]
                     keyword_scores = score[:, keyword_i]
                     score_frames = ' '.join(
                         ['{:.6f}'.format(x) for x in keyword_scores.tolist()])
-                    fout.write('{} {} {}\n'.format(key, keyword_i,
+                    fout.write('{} {} {}\n'.format(key, keyword,
                                                    score_frames))
             if batch_idx % 10 == 0:
                 print('Progress batch {}'.format(batch_idx))

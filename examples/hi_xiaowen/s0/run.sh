@@ -32,9 +32,10 @@ fi
 if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
   echo "Preparing datasets..."
   mkdir -p dict
-  echo "<filler> -1" > dict/words.txt
-  echo "Hi_Xiaowen 0" >> dict/words.txt
-  echo "Nihao_Wenwen 1" >> dict/words.txt
+  echo "<FILLER> -1" > dict/dict.txt
+  echo "<HI_XIAOWEN> 0" >> dict/dict.txt
+  echo "<NIHAO_WENWEN> 1" >> dict/dict.txt
+  awk '{print $1}' dict/dict.txt > dict/words.txt
 
   for folder in train dev test; do
     mkdir -p data/$folder
@@ -42,7 +43,7 @@ if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
       mkdir -p data/${prefix}_$folder
       json_path=$download_dir/mobvoi_hotword_dataset_resources/${prefix}_$folder.json
       local/prepare_data.py $download_dir/mobvoi_hotword_dataset $json_path \
-        data/${prefix}_$folder
+        dict/dict.txt data/${prefix}_$folder
     done
     cat data/p_$folder/wav.scp data/n_$folder/wav.scp > data/$folder/wav.scp
     cat data/p_$folder/text data/n_$folder/text > data/$folder/text
@@ -82,6 +83,7 @@ if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
       --num_keywords $num_keywords \
       --min_duration 50 \
       --seed 666 \
+      --dict ./dict \
       $cmvn_opts \
       ${checkpoint:+--checkpoint $checkpoint}
 fi
@@ -101,10 +103,11 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     --gpu 0 \
     --batch_size 256 \
     --checkpoint $score_checkpoint \
-    --score_file $result_dir/score.txt  \
+    --score_file $result_dir/score.txt \
+    --dict ./dict \
     --num_workers 8
 
-  for keyword in 0 1; do
+  for keyword in `tail -n +2 dict/words.txt`; do
     python wekws/bin/compute_det.py \
       --keyword $keyword \
       --test_data data/test/data.list \
@@ -115,8 +118,12 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
 
   # plot det curve
   python wekws/bin/plot_det_curve.py \
-      --keywords_dict dict/words.txt \
+      --keywords_dict dict/dict.txt \
       --stats_dir  $result_dir \
+      --xlim 2 \
+      --x_step 1 \
+      --ylim 5 \
+      --y_step 1 \
       --figure_file $result_dir/det.png
 fi
 
