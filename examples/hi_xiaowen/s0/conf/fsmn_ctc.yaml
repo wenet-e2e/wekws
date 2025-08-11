@@ -2,15 +2,19 @@ dataset_conf:
     filter_conf:
         max_length: 2048
         min_length: 0
+        token_max_length: 200
+        token_min_length: 1
+        max_output_input_ratio: 1
+        min_output_input_ratio: 0.0005
     resample_conf:
         resample_rate: 16000
     speed_perturb: false
-    feature_extraction_conf:
-        feature_type: 'fbank'
+    feats_type: 'fbank'
+    fbank_conf:
         num_mel_bins: 80
         frame_shift: 10
         frame_length: 25
-        dither: 1.
+        dither: 1.0
     context_expansion: true
     context_expansion_conf:
         left: 2
@@ -25,6 +29,7 @@ dataset_conf:
     shuffle: true
     shuffle_conf:
         shuffle_size: 1500
+    sort: false
     batch_conf:
         batch_size: 256
 
