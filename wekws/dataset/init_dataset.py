@@ -44,8 +44,8 @@ def context_expansion(sample, left=1, right=1):
     # replication pad left margin
     for idx in range(left):
         for cpx in range(left - idx):
-            feats_ctx[:, idx, cpx * feats.shape[2]:(cpx + 1) *
-                        feats.shape[2]] = feats_ctx[:, left, :feats.shape[2]]
+            feats_ctx[:, idx, cpx * feats.shape[2]:(cpx + 1) * feats.shape[2]] = \
+                feats_ctx[:, left, :feats.shape[2]]
 
     feats_ctx = feats_ctx[:, :feats_ctx.shape[1] - right]
     sample['feats'] = feats_ctx  # (B, T, D * n) where n = left + right + 1
@@ -63,7 +63,8 @@ def frame_skip(sample, skip_rate=1):
     """
     feats_skip = sample['feats'][:, ::skip_rate, :]
     sample['feats'] = feats_skip
-    sample['feats_lengths'] = torch.ceil(sample['feats_lengths'] / skip_rate).to(dtype=torch.int16)
+    feats_lengths = torch.ceil(sample['feats_lengths'] / skip_rate)
+    sample['feats_lengths'] = feats_lengths.to(dtype=torch.int16)
     return sample
 
 def init_dataset(dataset_type: str = 'asr',
@@ -91,7 +92,8 @@ def init_dataset(dataset_type: str = 'asr',
     dataset = Dataset(data_type, data_list_file, tokenizer, conf, partition)
 
     if conf.get('context_expansion', False):
-        dataset = dataset.map(partial(context_expansion, **conf.get('context_expansion_conf', {})))
+        dataset = dataset.map(
+            partial(context_expansion, **conf.get('context_expansion_conf', {})))
 
     if conf.get('frame_skip', 1) > 1:
         dataset = dataset.map(partial(frame_skip, skip_rate=conf.get('frame_skip')))
