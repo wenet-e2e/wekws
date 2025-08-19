@@ -140,7 +140,7 @@ def init_model(configs):
         else:
             block_class = CnnBlock
         kernel_size = configs['backbone'].get('kernel_size', 8)
-        dropout = configs['backbone'].get('drouput', 0.1)
+        dropout = configs['backbone'].get('dropout', 0.1)
         backbone = TCN(num_layers, hidden_dim, kernel_size, dropout,
                        block_class)
     elif backbone_type == 'mdtc':
