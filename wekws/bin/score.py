@@ -80,6 +80,7 @@ def main():
     test_conf = copy.deepcopy(configs['dataset_conf'])
     test_conf['filter_conf']['max_length'] = 102400
     test_conf['filter_conf']['min_length'] = 0
+    test_conf['filter_conf']['min_output_input_ratio'] = 0
     test_conf['speed_perturb'] = False
     test_conf['spec_aug'] = False
     test_conf['shuffle'] = False
