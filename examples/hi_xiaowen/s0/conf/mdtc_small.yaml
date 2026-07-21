@@ -5,8 +5,8 @@ dataset_conf:
     resample_conf:
         resample_rate: 16000
     speed_perturb: false
-    feature_extraction_conf:
-        feature_type: 'mfcc'
+    feats_type: 'mfcc'
+    mfcc_conf:
         num_ceps: 80
         num_mel_bins: 80
         frame_shift: 10

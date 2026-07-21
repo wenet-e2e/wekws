@@ -236,12 +236,11 @@ class KeyWordSpotter(torch.nn.Module):
         # feature related
         self.sample_rate = 16000
         self.wave_remained = np.array([])
-        self.num_mel_bins = dataset_conf['feature_extraction_conf'][
-            'num_mel_bins']
-        self.frame_length = dataset_conf['feature_extraction_conf'][
-            'frame_length']  # in ms
-        self.frame_shift = dataset_conf['feature_extraction_conf'][
-            'frame_shift']  # in ms
+        feats_type = dataset_conf.get('feats_type', 'fbank')
+        feats_conf = dataset_conf[f'{feats_type}_conf']
+        self.num_mel_bins = feats_conf['num_mel_bins']
+        self.frame_length = feats_conf['frame_length']  # in ms
+        self.frame_shift = feats_conf['frame_shift']  # in ms
         self.downsampling = dataset_conf.get('frame_skip', 1)
         self.resolution = self.frame_shift / 1000  # in second
         # fsmn splice operation

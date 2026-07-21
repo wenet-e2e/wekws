@@ -24,9 +24,10 @@ import torch
 import yaml
 from torch.utils.data import DataLoader
 
-from wekws.dataset.dataset import Dataset
+from wekws.dataset.init_dataset import init_dataset
 from wekws.model.kws_model import init_model
 from wekws.utils.checkpoint import load_checkpoint
+from wenet.text.char_tokenizer import CharTokenizer
 
 
 def get_args():
@@ -34,6 +35,7 @@ def get_args():
     parser.add_argument('--config', required=True, help='config file')
     parser.add_argument('--test_data', required=True, help='test data file')
     parser.add_argument('--checkpoint', required=True, help='checkpoint model')
+    parser.add_argument('--dict', required=True, help='dict directory')
     parser.add_argument('--num_workers',
                         default=0,
                         type=int,
@@ -69,10 +71,18 @@ def main():
     test_conf['speed_perturb'] = False
     test_conf['spec_aug'] = False
     test_conf['shuffle'] = False
-    test_conf['feature_extraction_conf']['dither'] = 0.0
+    feats_type = test_conf.get('feats_type', 'fbank')
+    test_conf[f'{feats_type}_conf']['dither'] = 0.0
     test_conf['batch_conf']['batch_size'] = 1
 
-    test_dataset = Dataset(args.test_data, test_conf)
+    tokenizer = CharTokenizer(f'{args.dict}/dict.txt',
+                              f'{args.dict}/words.txt',
+                              unk='<filler>',
+                              split_with_space=True)
+    test_dataset = init_dataset(data_list_file=args.test_data,
+                                conf=test_conf,
+                                tokenizer=tokenizer,
+                                split='test')
     test_data_loader = DataLoader(test_dataset,
                                   batch_size=None,
                                   pin_memory=args.pin_memory,
