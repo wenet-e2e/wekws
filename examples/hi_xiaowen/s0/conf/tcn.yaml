@@ -5,8 +5,8 @@ dataset_conf:
     resample_conf:
         resample_rate: 16000
     speed_perturb: false
-    feature_extraction_conf:
-        feature_type: 'fbank'
+    feats_type: 'fbank'
+    fbank_conf:
         num_mel_bins: 40
         frame_shift: 10
         frame_length: 25
